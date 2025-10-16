@@ -1,4 +1,5 @@
-import React from 'react';
+// src/screens/LoginScreen.js
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,27 +9,62 @@ import {
   ImageBackground,
   SafeAreaView,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session'; // --- 1. Importa AuthSession ---
+import * as Google from 'expo-auth-session/providers/google';
 import { useFonts, Oxanium_700Bold } from '@expo-google-fonts/oxanium';
 import { Inter_400Regular } from '@expo-google-fonts/inter';
 
-// --- Importa tus imágenes desde la carpeta de assets ---
+WebBrowser.maybeCompleteAuthSession();
+
 import backgroundImage from '../../assets/img/login-background.png';
 import unmsmLogo from '../../assets/img/logo-unmsm.png';
 import robotImage from '../../assets/img/robot-1.png';
-import googleIcon from '../../assets/img/google-logo.png'; // Asumiendo que guardaste el logo de Google
+import googleIcon from '../../assets/img/google-logo.png';
 
 export default function LoginScreen({ navigation }) {
-  // --- Carga las fuentes que necesitas ---
+  // --- 2. Forzamos el uso de la URL de redirección correcta ---
+  const redirectUri = 'https://auth.expo.io/@subdsr/EducaMovil';
+  console.log("Redirect URI forzada:", redirectUri);
+
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '427907752921-enn4ar0sqtbo6j4cdgbnq8dkb7oi0l19.apps.googleusercontent.com', // <-- este debe ser el del cliente Web
+    androidClientId: '427907752921-btn7l44e5b5cadjihl5kr5hteo5gi7kr.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@subdsr/EducaMovil',
+});
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      getUserInfo(authentication.accessToken);
+    }
+  }, [response]);
+
+  const getUserInfo = async (token) => {
+    try {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const user = await response.json();
+      navigation.navigate('Welcome', { email: user.email });
+    } catch (error) {
+      console.error("Error al obtener la información del usuario:", error);
+    }
+  };
+
   let [fontsLoaded] = useFonts({
     Oxanium_700Bold,
     Inter_400Regular,
   });
 
   if (!fontsLoaded) {
-    return null; // O un componente de carga mientras las fuentes se cargan
+    return null;
   }
 
   return (
+    // ... el resto de tu JSX no cambia ...
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
         <Image source={unmsmLogo} style={styles.logo} />
@@ -38,17 +74,16 @@ export default function LoginScreen({ navigation }) {
             Convierte cada línea de código en un paso hacia tu futuro. Inspírate, diviértete y descubre tu camino
           </Text>
           <Image source={robotImage} style={styles.robotImage} />
-
           <TouchableOpacity
             style={styles.googleBtn}
-            // Navega a la pantalla de cursos al presionar
-            onPress={() => navigation.navigate('Cursos')}
+            disabled={!request}
+            onPress={() => {
+              promptAsync();
+            }}
           >
             <Image source={googleIcon} style={styles.googleIcon} />
             <Text style={styles.btnText}>Continuar con Google</Text>
           </TouchableOpacity>
-
-          // En LoginScreen.js, busca este TouchableOpacity y modifícalo:
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
             <Text style={styles.registerBtn}>Crear una cuenta</Text>
           </TouchableOpacity>
@@ -58,7 +93,7 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-// --- Estilos convertidos desde tu CSS ---
+// ... tus estilos no cambian ...
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -70,7 +105,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 60,
     position: 'absolute',
-    top: 50, // Ajusta según sea necesario
+    top: 50,
     left: 20,
     resizeMode: 'contain',
   },
@@ -83,7 +118,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Oxanium_700Bold',
     fontSize: 58,
-    color: '#333', // Color ajustado para mejor legibilidad
+    color: '#333',
     marginBottom: 10,
   },
   subtitle: {
@@ -109,12 +144,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 10,
     marginBottom: 20,
-    // Sombra para iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
-    // Sombra para Android
     elevation: 3,
   },
   googleIcon: {
