@@ -20,6 +20,7 @@ import nextButton from '../../assets/img/perfil-button.png';
 export default function WelcomeScreen({ route, navigation }) {
   const { email } = route.params;
 
+  // ... (la función getUserData y el resto no cambian)
   const getUserData = (userEmail) => {
     if (!userEmail || !userEmail.includes('@')) {
       return { firstName: 'Usuario', lastName: '' };
@@ -43,7 +44,7 @@ export default function WelcomeScreen({ route, navigation }) {
   if (!fontsLoaded) {
     return null;
   }
-
+  
   return (
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.container}>
@@ -52,10 +53,15 @@ export default function WelcomeScreen({ route, navigation }) {
         <Text style={styles.fullName}>{firstName} {lastName}</Text>
 
         <TouchableOpacity
-            style={styles.nextButton}
-            onPress={() => navigation.navigate('MainApp')} // <-- CAMBIA 'Cursos' por 'MainApp'
+          style={styles.nextButton}
+          // --- CAMBIO IMPORTANTE AQUÍ ---
+          // Reiniciamos la navegación y pasamos el email a la app principal
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainApp', params: { userEmail: email } }],
+          })}
         >
-            <Image source={nextButton} style={styles.nextButtonIcon} />
+          <Image source={nextButton} style={styles.nextButtonIcon} />
         </TouchableOpacity>
       </SafeAreaView>
     </ImageBackground>

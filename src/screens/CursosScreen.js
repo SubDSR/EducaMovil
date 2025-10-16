@@ -28,21 +28,28 @@ const ProgressBar = ({ progress, total }) => {
     );
 };
   
-const CourseCard = ({ title, description, progress, total }) => (
-    <TouchableOpacity style={styles.cardContainer}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardDescription}>{description}</Text>
-      <View style={styles.progressInfo}>
-        <Text style={styles.sectionText}>SECCIÓN</Text>
-        <Text style={styles.progressText}>{`${progress}/${total}`}</Text>
-      </View>
-      <ProgressBar progress={progress} total={total} />
-    </TouchableOpacity>
+const CourseCard = ({ title, description, progress, total, navigation }) => ( // <-- Añade navigation aquí
+  <TouchableOpacity
+    style={styles.cardContainer}
+    // Añadimos la lógica de navegación
+    onPress={() => {
+      if (title === 'Tipos de datos') {
+        navigation.navigate('TiposDeDatos');
+      }
+    }}
+  >
+    <Text style={styles.cardTitle}>{title}</Text>
+    <Text style={styles.cardDescription}>{description}</Text>
+    <View style={styles.progressInfo}>
+      <Text style={styles.sectionText}>SECCIÓN</Text>
+      <Text style={styles.progressText}>{`${progress}/${total}`}</Text>
+    </View>
+    <ProgressBar progress={progress} total={total} />
+  </TouchableOpacity>
 );
 
-export default function CursosScreen({ navigation }) {
+export default function CursosScreen({ navigation }) { // <-- Asegúrate que navigation llegue aquí
   return (
-    // --- CAMBIO AQUÍ: Nuevos colores para el degradado ---
     <LinearGradient colors={['#E6F7FF', '#D5E6FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -51,7 +58,8 @@ export default function CursosScreen({ navigation }) {
 
         <FlatList
           data={coursesData}
-          renderItem={({ item }) => <CourseCard {...item} />}
+          // --- Pasamos la prop de navegación a cada tarjeta ---
+          renderItem={({ item }) => <CourseCard {...item} navigation={navigation} />}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
         />
@@ -59,7 +67,6 @@ export default function CursosScreen({ navigation }) {
     </LinearGradient>
   );
 }
-
 // ... (El resto de los estilos no cambian)
 const styles = StyleSheet.create({
     gradient: {

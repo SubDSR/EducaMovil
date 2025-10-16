@@ -4,13 +4,17 @@ import { SafeAreaView, View, Text, StyleSheet, Image, ScrollView } from 'react-n
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// ... (El resto de tus datos y componentes de LogrosScreen no cambian)
+// --- 1. AÑADIMOS LAS MISIONES SEMANALES A LOS DATOS ---
 const missions = {
-    priority: [{ id: 'p1', text: 'Curso de Ciberseguridad', xp: '100 EXP/test' }],
-    daily: [
-      { id: 'd1', text: 'Completa un test con más del 80% de aciertos.', xp: '75 EXP' },
-      { id: 'd2', text: 'Responde 15 preguntas correctamente.', xp: '75 EXP' },
-    ],
+  priority: [{ id: 'p1', text: 'Curso de Ciberseguridad', xp: '100 EXP/test' }],
+  daily: [
+    { id: 'd1', text: 'Completa un test con más del 80% de aciertos.', xp: '75 EXP' },
+    { id: 'd2', text: 'Responde 15 preguntas correctamente.', xp: '75 EXP' },
+  ],
+  weekly: [
+    { id: 'w1', text: 'Completa 15 tests', xp: '250 EXP' },
+    { id: 'w2', text: 'Completa tests por 5 días consecutivos.', xp: '350 EXP' },
+  ],
 };
 
 const XpBar = ({ progress, total }) => {
@@ -24,7 +28,6 @@ const XpBar = ({ progress, total }) => {
 
 export default function LogrosScreen() {
   return (
-    // --- CAMBIO AQUÍ: Nuevos colores para el degradado ---
     <LinearGradient colors={['#E6F7FF', '#D5E6FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
@@ -66,26 +69,35 @@ export default function LogrosScreen() {
               <Text style={styles.missionXp}>{mission.xp}</Text>
             </View>
           ))}
+
+          {/* --- 2. AÑADIMOS LA NUEVA SECCIÓN DE MISIONES SEMANALES --- */}
+          <Text style={styles.missionTitle}>Misiones semanales</Text>
+          {missions.weekly.map((mission) => (
+            <View key={mission.id} style={styles.missionCard}>
+              <Text style={styles.missionText}>{mission.text}</Text>
+              <Text style={styles.missionXp}>{mission.xp}</Text>
+            </View>
+          ))}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
-// ... (El resto de los estilos no cambian)
+// --- Los estilos no necesitan cambios, ya que reutilizamos los existentes ---
 const styles = StyleSheet.create({
     gradient: {
-      flex: 1,
+        flex: 1,
     },
     safeArea: {
-      flex: 1,
-      backgroundColor: 'transparent',
+        flex: 1,
+        backgroundColor: 'transparent',
     },
     container: {
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 100, // Espacio para la barra de pestañas
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 100, // Espacio para la barra de pestañas
     },
     headerTitle: {
         fontSize: 24,
@@ -162,6 +174,7 @@ const styles = StyleSheet.create({
         color: '#333',
         alignSelf: 'flex-start',
         marginBottom: 15,
+        marginTop: 10,
     },
     missionCard: {
         flexDirection: 'row',
