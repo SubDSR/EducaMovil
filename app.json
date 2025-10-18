@@ -2,7 +2,6 @@
   "expo": {
     "name": "EducaMovil",
     "slug": "EducaMovil",
-    "scheme": "com.dsevanreyes.educamovil",
     "owner": "subdsr",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,6 +28,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "educamovil",
     "plugins": [
       "expo-font",
       "expo-web-browser"
