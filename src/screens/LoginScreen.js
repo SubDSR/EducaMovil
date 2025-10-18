@@ -34,6 +34,7 @@ export default function LoginScreen({ navigation }) {
   // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: '980386025823-50dm6ado0r58iuqglvhl9sqep3d5aaq5.apps.googleusercontent.com',
+    iosClientId: 'TU_IOS_CLIENT_ID.apps.googleusercontent.com', // Si tienes iOS
     webClientId: '980386025823-ldlas1541tmj65l8t919j5vt7ihril8f.apps.googleusercontent.com',
   });
 
@@ -42,10 +43,24 @@ export default function LoginScreen({ navigation }) {
     Oxanium_600SemiBold,
   });
 
-  // Verificar si hay un usuario guardado al iniciar
+  // Limpiar sesión al cargar la pantalla de login
   useEffect(() => {
-    checkLocalUser();
+    clearSession();
   }, []);
+
+  const clearSession = async () => {
+    try {
+      await AsyncStorage.removeItem('@user');
+    } catch (error) {
+      console.log('Error clearing session:', error);
+    }
+  };
+
+  // Verificar si hay un usuario guardado al iniciar
+  // COMENTADO: Para que siempre pida login
+  // useEffect(() => {
+  //   checkLocalUser();
+  // }, []);
 
   // Manejar la respuesta de Google
   useEffect(() => {
