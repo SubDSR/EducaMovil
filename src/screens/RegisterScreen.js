@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,9 +9,13 @@ import {
   SafeAreaView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useFonts, Oxanium_700Bold, Oxanium_600SemiBold } from '@expo-google-fonts/oxanium';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Importa tus imágenes ---
 import backgroundImage from '../../assets/img/login-background.png';
@@ -19,21 +23,77 @@ import unmsmLogo from '../../assets/img/logo-unmsm.png';
 import robotImage from '../../assets/img/robot-2.png';
 import googleIcon from '../../assets/img/google-logo.png';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // --- 1. Nuevo estado para controlar la visibilidad de la contraseña ---
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Configuración de Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: '980386025823-50dm6ado0r58iuqglvhl9sqep3d5aaq5.apps.googleusercontent.com',
+    webClientId: '980386025823-ldlas1541tmj65l8t919j5vt7ihril8f.apps.googleusercontent.com',
+  });
 
   let [fontsLoaded] = useFonts({
     Oxanium_700Bold,
     Oxanium_600SemiBold,
   });
 
-  const handleLogin = () => {
+  // Manejar la respuesta de Google
+  useEffect(() => {
+    handleGoogleSignIn();
+  }, [response]);
+
+  const handleGoogleSignIn = async () => {
+    if (response?.type === 'success') {
+      setLoading(true);
+      try {
+        const { accessToken } = response.authentication;
+        const userInfo = await getUserInfo(accessToken);
+        
+        if (userInfo) {
+          // Guardar usuario en AsyncStorage
+          await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
+          
+          // Navegar a Welcome con el email del usuario
+          navigation.replace('Welcome', { email: userInfo.email });
+        }
+      } catch (error) {
+        console.error('Error during Google sign in:', error);
+        Alert.alert('Error', 'No se pudo completar el registro con Google');
+      } finally {
+        setLoading(false);
+      }
+    } else if (response?.type === 'error') {
+      console.error('Error durante la autenticación:', response.error);
+      Alert.alert('Error', 'Error al registrarse con Google');
+    }
+  };
+
+  const getUserInfo = async (token) => {
+    try {
+      const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await response.json();
+      return user;
+    } catch (error) {
+      console.error('Error getting user info:', error);
+      return null;
+    }
+  };
+
+  const handleRegister = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
     if (email.trim().toLowerCase().endsWith('@unmsm.edu.pe')) {
-      // --- MODIFICA ESTA LÍNEA ---
-      // Ahora navegamos a 'Welcome' y pasamos el email como parámetro
+      // Aquí podrías agregar lógica de registro (API, Firebase, etc.)
       navigation.navigate('Welcome', { email: email.trim().toLowerCase() });
     } else {
       Alert.alert(
@@ -43,21 +103,45 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  const handleGoogleRegister = () => {
+    promptAsync();
+  };
+
   if (!fontsLoaded) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <ImageBackground source={backgroundImage} style={styles.background}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#619CE9" />
+            <Text style={styles.loadingText}>Registrando...</Text>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    );
   }
 
   return (
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        
         <Image source={unmsmLogo} style={styles.logo} />
         <View style={styles.container}>
           <Text style={styles.title}>EducaMovil</Text>
           <Text style={styles.stepText}>¡Solo falta un paso!</Text>
           <Image source={robotImage} style={styles.robotImage} />
-          <Text style={styles.registerLabel}>Registrate</Text>
+          <Text style={styles.registerLabel}>Regístrate</Text>
 
-          {/* --- Campo de Correo (sin cambios) --- */}
+          {/* Campo de Correo */}
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color="#828282" />
             <TextInput
@@ -71,22 +155,19 @@ export default function RegisterScreen({ navigation }) {
             />
           </View>
 
-          {/* --- Campo de Contraseña (con el ícono del ojo) --- */}
+          {/* Campo de Contraseña */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#828282" />
             <TextInput
               style={styles.input}
               placeholder="Contraseña"
               placeholderTextColor="#828282"
-              // --- 2. La visibilidad depende del estado ---
               secureTextEntry={!isPasswordVisible}
               value={password}
               onChangeText={setPassword}
             />
-            {/* --- 3. Botón para cambiar la visibilidad --- */}
             <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
               <Ionicons
-                // --- 4. El ícono cambia según el estado ---
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
                 size={22}
                 color="#828282"
@@ -94,16 +175,26 @@ export default function RegisterScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleLogin}
-          >
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleRegister}>
+            <Text style={styles.loginButtonText}>Registrarse</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.googleBtn}>
+          <TouchableOpacity 
+            style={styles.googleBtn} 
+            onPress={handleGoogleRegister}
+            disabled={!request}
+          >
             <Image source={googleIcon} style={styles.googleIcon} />
             <Text style={styles.btnText}>Continuar con Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.loginLink}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.loginLinkText}>
+              ¿Ya tienes cuenta? <Text style={styles.loginLinkBold}>Inicia Sesión</Text>
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -111,106 +202,135 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-// --- Los estilos permanecen iguales ---
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-      },
-      safeArea: {
-        flex: 1,
-      },
-      logo: {
-        width: 50,
-        height: 60,
-        position: 'absolute',
-        top: 50,
-        left: 20,
-        resizeMode: 'contain',
-      },
-      container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 20,
-      },
-      title: {
-        fontFamily: 'Oxanium_700Bold',
-        fontSize: 48,
-        color: '#333',
-      },
-      stepText: {
-        fontSize: 16,
-        color: '#555',
-        marginTop: 5,
-      },
-      robotImage: {
-        width: 120,
-        height: 120,
-        resizeMode: 'contain',
-        marginVertical: 15,
-      },
-      registerLabel: {
-        fontFamily: 'Oxanium_700Bold',
-        fontSize: 30,
-        fontWeight: '600',
-        marginVertical: 10,
-        color: '#333',
-      },
-      inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F3F3',
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#BDBDBD',
-        height: 45,
-        width: '90%',
-        marginVertical: 8,
-        paddingHorizontal: 15,
-      },
-      input: {
-        flex: 1,
-        paddingLeft: 10,
-        fontFamily: 'Oxanium_600SemiBold',
-        color: '#828282',
-        fontSize: 16,
-      },
-      loginButton: {
-        backgroundColor: '#619CE9',
-        borderRadius: 16,
-        height: 45,
-        width: '90%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginVertical: 18,
-      },
-      loginButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-      },
-      googleBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#ffffff',
-        borderRadius: 32,
-        paddingHorizontal: 30,
-        paddingVertical: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
-        elevation: 3,
-      },
-      googleIcon: {
-        width: 18,
-        height: 18,
-        marginRight: 15,
-      },
-      btnText: {
-        fontWeight: '500',
-        color: '#3c4043',
-        fontSize: 16,
-      },
+  background: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 80,
+    zIndex: 10,
+    padding: 10,
+  },
+  logo: {
+    width: 50,
+    height: 60,
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    resizeMode: 'contain',
+  },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#619CE9',
+    fontFamily: 'Oxanium_600SemiBold',
+  },
+  title: {
+    fontFamily: 'Oxanium_700Bold',
+    fontSize: 48,
+    color: '#333',
+  },
+  stepText: {
+    fontSize: 16,
+    color: '#555',
+    marginTop: 5,
+  },
+  robotImage: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    marginVertical: 15,
+  },
+  registerLabel: {
+    fontFamily: 'Oxanium_700Bold',
+    fontSize: 30,
+    fontWeight: '600',
+    marginVertical: 10,
+    color: '#333',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F3F3',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    height: 45,
+    width: '90%',
+    marginVertical: 8,
+    paddingHorizontal: 15,
+  },
+  input: {
+    flex: 1,
+    paddingLeft: 10,
+    fontFamily: 'Oxanium_600SemiBold',
+    color: '#828282',
+    fontSize: 16,
+  },
+  loginButton: {
+    backgroundColor: '#619CE9',
+    borderRadius: 16,
+    height: 45,
+    width: '90%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 18,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+    marginBottom: 15,
+  },
+  googleIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 15,
+  },
+  btnText: {
+    fontWeight: '500',
+    color: '#3c4043',
+    fontSize: 16,
+  },
+  loginLink: {
+    marginTop: 10,
+  },
+  loginLinkText: {
+    fontSize: 14,
+    color: '#555',
+  },
+  loginLinkBold: {
+    fontWeight: 'bold',
+    color: '#619CE9',
+  },
 });

@@ -1,5 +1,4 @@
-// src/screens/LoginScreen.js
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,84 +7,204 @@ import {
   TouchableOpacity,
   ImageBackground,
   SafeAreaView,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { useFonts, Oxanium_700Bold, Oxanium_600SemiBold } from '@expo-google-fonts/oxanium';
+import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session'; // --- 1. Importa AuthSession ---
 import * as Google from 'expo-auth-session/providers/google';
-import { useFonts, Oxanium_700Bold } from '@expo-google-fonts/oxanium';
-import { Inter_400Regular } from '@expo-google-fonts/inter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// --- Importa tus imágenes ---
+import backgroundImage from '../../assets/img/login-background.png';
+import unmsmLogo from '../../assets/img/logo-unmsm.png';
+import robotImage from '../../assets/img/robot-2.png';
+import googleIcon from '../../assets/img/google-logo.png';
 
 WebBrowser.maybeCompleteAuthSession();
 
-import backgroundImage from '../../assets/img/login-background.png';
-import unmsmLogo from '../../assets/img/logo-unmsm.png';
-import robotImage from '../../assets/img/robot-1.png';
-import googleIcon from '../../assets/img/google-logo.png';
-
 export default function LoginScreen({ navigation }) {
-  // --- 2. Forzamos el uso de la URL de redirección correcta ---
-  const redirectUri = 'https://auth.expo.io/@subdsr/EducaMovil';
-  console.log("Redirect URI forzada:", redirectUri);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-
+  // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: '427907752921-enn4ar0sqtbo6j4cdgbnq8dkb7oi0l19.apps.googleusercontent.com', // <-- este debe ser el del cliente Web
-    androidClientId: '427907752921-btn7l44e5b5cadjihl5kr5hteo5gi7kr.apps.googleusercontent.com',
-    redirectUri: 'https://auth.expo.io/@subdsr/EducaMovil',
-});
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      getUserInfo(authentication.accessToken);
-    }
-  }, [response]);
-
-  const getUserInfo = async (token) => {
-    try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const user = await response.json();
-      navigation.navigate('Welcome', { email: user.email });
-    } catch (error) {
-      console.error("Error al obtener la información del usuario:", error);
-    }
-  };
+    androidClientId: '980386025823-50dm6ado0r58iuqglvhl9sqep3d5aaq5.apps.googleusercontent.com',
+    webClientId: '980386025823-ldlas1541tmj65l8t919j5vt7ihril8f.apps.googleusercontent.com',
+  });
 
   let [fontsLoaded] = useFonts({
     Oxanium_700Bold,
-    Inter_400Regular,
+    Oxanium_600SemiBold,
   });
+
+  // Verificar si hay un usuario guardado al iniciar
+  useEffect(() => {
+    checkLocalUser();
+  }, []);
+
+  // Manejar la respuesta de Google
+  useEffect(() => {
+    handleGoogleSignIn();
+  }, [response]);
+
+  const checkLocalUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('@user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        // Si hay usuario guardado, ir directamente a Welcome
+        navigation.replace('Welcome', { email: user.email });
+      }
+    } catch (error) {
+      console.log('Error checking local user:', error);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (response?.type === 'success') {
+      setLoading(true);
+      try {
+        const { accessToken } = response.authentication;
+        const userInfo = await getUserInfo(accessToken);
+        
+        if (userInfo) {
+          // Guardar usuario en AsyncStorage
+          await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
+          
+          // Navegar a Welcome con el email del usuario
+          navigation.replace('Welcome', { email: userInfo.email });
+        }
+      } catch (error) {
+        console.error('Error during Google sign in:', error);
+        Alert.alert('Error', 'No se pudo completar el inicio de sesión con Google');
+      } finally {
+        setLoading(false);
+      }
+    } else if (response?.type === 'error') {
+      console.error('Error durante la autenticación:', response.error);
+      Alert.alert('Error', 'Error al iniciar sesión con Google');
+    }
+  };
+
+  const getUserInfo = async (token) => {
+    try {
+      const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await response.json();
+      return user;
+    } catch (error) {
+      console.error('Error getting user info:', error);
+      return null;
+    }
+  };
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (email.trim().toLowerCase().endsWith('@unmsm.edu.pe')) {
+      navigation.navigate('Welcome', { email: email.trim().toLowerCase() });
+    } else {
+      Alert.alert(
+        "Correo Inválido",
+        "Por favor, utiliza tu correo institucional (@unmsm.edu.pe) para iniciar sesión."
+      );
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    promptAsync();
+  };
 
   if (!fontsLoaded) {
     return null;
   }
 
+  if (loading) {
+    return (
+      <ImageBackground source={backgroundImage} style={styles.background}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#619CE9" />
+            <Text style={styles.loadingText}>Iniciando sesión...</Text>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    );
+  }
+
   return (
-    // ... el resto de tu JSX no cambia ...
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
         <Image source={unmsmLogo} style={styles.logo} />
         <View style={styles.container}>
           <Text style={styles.title}>EducaMovil</Text>
-          <Text style={styles.subtitle}>
-            Convierte cada línea de código en un paso hacia tu futuro. Inspírate, diviértete y descubre tu camino
-          </Text>
+          <Text style={styles.stepText}>Bienvenido de vuelta</Text>
           <Image source={robotImage} style={styles.robotImage} />
-          <TouchableOpacity
-            style={styles.googleBtn}
+          <Text style={styles.registerLabel}>Iniciar Sesión</Text>
+
+          {/* Campo de Correo */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#828282" />
+            <TextInput
+              style={styles.input}
+              placeholder="Correo electrónico"
+              placeholderTextColor="#828282"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          {/* Campo de Contraseña */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#828282" />
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              placeholderTextColor="#828282"
+              secureTextEntry={!isPasswordVisible}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={22}
+                color="#828282"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.googleBtn} 
+            onPress={handleGoogleLogin}
             disabled={!request}
-            onPress={() => {
-              promptAsync();
-            }}
           >
             <Image source={googleIcon} style={styles.googleIcon} />
             <Text style={styles.btnText}>Continuar con Google</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerBtn}>Crear una cuenta</Text>
+
+          <TouchableOpacity 
+            style={styles.registerLink}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.registerLinkText}>
+              ¿No tienes cuenta? <Text style={styles.registerLinkBold}>Regístrate</Text>
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -93,7 +212,6 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-// ... tus estilos no cambian ...
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -115,25 +233,72 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#619CE9',
+    fontFamily: 'Oxanium_600SemiBold',
+  },
   title: {
     fontFamily: 'Oxanium_700Bold',
-    fontSize: 58,
+    fontSize: 48,
     color: '#333',
-    marginBottom: 10,
   },
-  subtitle: {
-    fontFamily: 'Inter_400Regular',
+  stepText: {
     fontSize: 16,
-    textAlign: 'center',
-    width: '80%',
     color: '#555',
-    marginBottom: 30,
+    marginTop: 5,
   },
   robotImage: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
-    marginBottom: 40,
+    marginVertical: 15,
+  },
+  registerLabel: {
+    fontFamily: 'Oxanium_700Bold',
+    fontSize: 30,
+    fontWeight: '600',
+    marginVertical: 10,
+    color: '#333',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F3F3',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    height: 45,
+    width: '90%',
+    marginVertical: 8,
+    paddingHorizontal: 15,
+  },
+  input: {
+    flex: 1,
+    paddingLeft: 10,
+    fontFamily: 'Oxanium_600SemiBold',
+    color: '#828282',
+    fontSize: 16,
+  },
+  loginButton: {
+    backgroundColor: '#619CE9',
+    borderRadius: 16,
+    height: 45,
+    width: '90%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 18,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   googleBtn: {
     flexDirection: 'row',
@@ -143,12 +308,12 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     paddingHorizontal: 30,
     paddingVertical: 10,
-    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
+    marginBottom: 15,
   },
   googleIcon: {
     width: 18,
@@ -160,9 +325,15 @@ const styles = StyleSheet.create({
     color: '#3c4043',
     fontSize: 16,
   },
-  registerBtn: {
-    color: '#4062ED',
+  registerLink: {
+    marginTop: 10,
+  },
+  registerLinkText: {
     fontSize: 14,
-    fontWeight: '500',
+    color: '#555',
+  },
+  registerLinkBold: {
+    fontWeight: 'bold',
+    color: '#619CE9',
   },
 });
