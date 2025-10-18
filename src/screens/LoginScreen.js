@@ -33,7 +33,7 @@ export default function LoginScreen({ navigation }) {
 
   // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: '980386025823-50dm6ado0r58iuqglvhl9sqep3d5aaq5.apps.googleusercontent.com',
+    androidClientId: '980386025823-tcm16nn8kv1hcgq3bvt63bqp09odng6u.apps.googleusercontent.com',
     //iosClientId: 'TU_IOS_CLIENT_ID.apps.googleusercontent.com', // Si tienes iOS
     webClientId: '980386025823-ldlas1541tmj65l8t919j5vt7ihril8f.apps.googleusercontent.com',
   });
