@@ -1,5 +1,5 @@
-// src/screens/TiposDeDatosScreen.js
-import React, { useState } from 'react'; // --- 1. Importamos useState
+// src/screens/TiposDeDatosScreen.js - NAVEGACIÓN CORREGIDA
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -9,52 +9,83 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-// ... (las importaciones de imágenes no cambian)
-import nivelDesbloqueado from '../../assets/img/nivel-desbloqueado.png';
-import nivelActual from '../../assets/img/nivel-actual.png';
-import nivelBloqueado from '../../assets/img/nivel-bloqueado.png';
-import robot3 from '../../assets/img/robot-3.png';
-import robot4 from '../../assets/img/robot-4.png';
-import robot5 from '../../assets/img/robot-5.png';
-import robot6 from '../../assets/img/robot-6.png';
-import robot7 from '../../assets/img/robot-7.png';
-import robot8 from '../../assets/img/robot-8.png';
-import hamburguerMenu from '../../assets/img/hamburguer-menu.png';
+// Componentes reutilizables
+import LevelNode from '../components/LevelNode';
+import LessonBubble from '../components/LessonBubble';
 
+// Imágenes
+const robot3 = require('../../assets/img/robot-3.png');
+const robot4 = require('../../assets/img/robot-4.png');
+const robot5 = require('../../assets/img/robot-5.png');
+const robot6 = require('../../assets/img/robot-6.png');
+const robot7 = require('../../assets/img/robot-7.png');
+const robot8 = require('../../assets/img/robot-8.png');
 
-// --- 2. Modificamos el componente para aceptar un `onPress` ---
-const Level = ({ style, status, onPress }) => {
-  let imageSource = nivelBloqueado;
-  if (status === 'unlocked') {
-    imageSource = nivelDesbloqueado;
-  } else if (status === 'current') {
-    imageSource = nivelActual;
-  }
+const TiposDeDatosScreen = ({ navigation }) => {
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
-  // TouchableOpacity ya nos da un efecto visual al presionar (se opaca ligeramente)
-  return (
-    <TouchableOpacity style={[styles.level, style]} onPress={onPress} activeOpacity={0.7}>
-      <Image source={imageSource} style={styles.levelImage} />
-    </TouchableOpacity>
-  );
-};
+  // Datos de las lecciones
+  const lessons = [
+    { id: 1, title: 'Tipos de datos fundamentales', position: { left: 50, top: 90 }, status: 'unlocked' },
+    { id: 2, title: 'Enteros y decimales', position: { left: 140, top: 150 }, status: 'unlocked' },
+    { id: 3, title: 'Cadenas de texto', position: { left: 230, top: 210 }, status: 'unlocked' },
+    { id: 4, title: 'Booleanos', position: { left: 190, top: 300 }, status: 'unlocked' },
+    { id: 5, title: 'Conversión de tipos', position: { left: 230, top: 390 }, status: 'current' },
+    { id: 6, title: 'Operadores aritméticos', position: { left: 140, top: 450 }, status: 'locked' },
+    { id: 7, title: 'Operadores lógicos', position: { left: 50, top: 510 }, status: 'locked' },
+    { id: 8, title: 'Operadores de comparación', position: { left: 90, top: 600 }, status: 'locked' },
+    { id: 9, title: 'Variables y constantes', position: { left: 50, top: 690 }, status: 'locked' },
+    { id: 10, title: 'Alcance de variables', position: { left: 140, top: 750 }, status: 'locked' },
+  ];
 
-export default function TiposDeDatosScreen({ navigation }) {
-  // --- 3. Creamos un estado para controlar la visibilidad de la burbuja ---
-  const [isBubbleVisible, setIsBubbleVisible] = useState(false);
+  const handleLevelPress = (lesson) => {
+    if (lesson.status === 'current') {
+      // Mostrar u ocultar la burbuja
+      setSelectedLevel(selectedLevel?.id === lesson.id ? null : lesson);
+    } else if (lesson.status === 'unlocked') {
+      // Iniciar lección directamente
+      startLesson(lesson);
+    }
+  };
+
+  const startLesson = (lesson) => {
+    setSelectedLevel(null);
+    navigation.navigate('LeccionFlashcard', { 
+      lessonTitle: lesson.title,
+      lessonNumber: lesson.id 
+    });
+  };
+
+  const getBubblePosition = (levelPosition) => {
+    // Posicionar la burbuja arriba del nivel
+    return {
+      left: levelPosition.left - 100,
+      top: levelPosition.top - 120,
+    };
+  };
+
+  // ✅ FUNCIÓN CORREGIDA - Navega a Cursos (Aprende)
+  const handleGoBack = () => {
+    navigation.navigate('Aprende'); // Navega a la pestaña de Cursos
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Image source={hamburguerMenu} style={styles.headerIcon} />
+        <TouchableOpacity 
+          onPress={handleGoBack} // ✅ Ahora navega a Cursos
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="white" />
           <Text style={styles.headerTitle}>Tipos de datos</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Robots */}
+        {/* Robots decorativos */}
         <Image source={robot3} style={[styles.robot, { left: 30, top: 240 }]} />
         <Image source={robot4} style={[styles.robot, { left: 30, top: 1440 }]} />
         <Image source={robot5} style={[styles.robot, { left: 30, top: 850 }]} />
@@ -62,150 +93,79 @@ export default function TiposDeDatosScreen({ navigation }) {
         <Image source={robot7} style={[styles.robot, { left: 200, top: 1150 }]} />
         <Image source={robot8} style={[styles.robot, { left: 200, top: 1700 }]} />
 
-        {/* --- 4. Renderizamos la burbuja solo si isBubbleVisible es true --- */}
-        {isBubbleVisible && (
-          <View style={styles.speechBubbleContainer}>
-            <View style={styles.speechBubble}>
-              <Text style={styles.bubbleTitle}>Lección 5 - Conversión de tipos</Text>
-              <TouchableOpacity style={styles.bubbleButton}>
-                <Text style={styles.bubbleButtonText}>Comenzar</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.bubbleArrow} />
-          </View>
+        {/* Burbuja de lección (solo para nivel actual) */}
+        {selectedLevel && (
+          <LessonBubble
+            title={selectedLevel.title}
+            lessonNumber={selectedLevel.id}
+            onStart={() => startLesson(selectedLevel)}
+            style={getBubblePosition(selectedLevel.position)}
+          />
         )}
 
-        {/* Niveles */}
-        <Level status="unlocked" style={{ left: 50, top: 90 }} />
-        <Level status="unlocked" style={{ left: 140, top: 150 }} />
-        <Level status="unlocked" style={{ left: 230, top: 210 }} />
-        <Level status="unlocked" style={{ left: 190, top: 300 }} />
-        
-        {/* --- 5. Añadimos el `onPress` para cambiar el estado --- */}
-        <Level
-          status="current"
-          style={{ left: 230, top: 390 }}
-          onPress={() => setIsBubbleVisible(!isBubbleVisible)} // Al presionar, invierte la visibilidad
-        />
-        
-        <Level status="locked" style={{ left: 140, top: 450 }} />
-        <Level status="locked" style={{ left: 50, top: 510 }} />
-        <Level status="locked" style={{ left: 90, top: 600 }} />
-        <Level status="locked" style={{ left: 50, top: 690 }} />
-        <Level status="locked" style={{ left: 140, top: 750 }} />
-        <Level status="locked" style={{ left: 230, top: 810 }} />
-        <Level status="locked" style={{ left: 190, top: 900 }} />
-        <Level status="locked" style={{ left: 230, top: 990 }} />
-        <Level status="locked" style={{ left: 140, top: 1050 }} />
-        <Level status="locked" style={{ left: 50, top: 1110 }} />
-        <Level status="locked" style={{ left: 90, top: 1200 }} />
-        <Level status="locked" style={{ left: 50, top: 1290 }} />
-        <Level status="locked" style={{ left: 140, top: 1350 }} />
-        <Level status="locked" style={{ left: 230, top: 1410 }} />
-        <Level status="locked" style={{ left: 190, top: 1500 }} />
-        <Level status="locked" style={{ left: 230, top: 1590 }} />
-        <Level status="locked" style={{ left: 140, top: 1650 }} />
-        <Level status="locked" style={{ left: 50, top: 1710 }} />
-        <Level status="locked" style={{ left: 90, top: 1800 }} />
-        <Level status="locked" style={{ left: 50, top: 1890 }} />
+        {/* Niveles del camino de aprendizaje */}
+        {lessons.map((lesson) => (
+          <LevelNode
+            key={lesson.id}
+            status={lesson.status}
+            style={lesson.position}
+            onPress={() => handleLevelPress(lesson)}
+            showPlayIcon={lesson.status === 'current'}
+          />
+        ))}
+
+        {/* Niveles adicionales bloqueados */}
+        {[...Array(10)].map((_, index) => (
+          <LevelNode
+            key={`locked-${index + 11}`}
+            status="locked"
+            style={{ 
+              left: [230, 140, 50, 90, 50, 140, 230, 190, 230, 140][index],
+              top: 810 + (index * 90)
+            }}
+          />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
-// ... (Los estilos no cambian)
 const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: '#D5E6FF',
-    },
-    header: {
-      backgroundColor: '#987ACC',
-      paddingTop: 40,
-      paddingBottom: 10,
-      paddingHorizontal: 15,
-    },
-    backButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#52328C',
-      borderRadius: 16,
-      paddingVertical: 8,
-      paddingHorizontal: 15,
-      alignSelf: 'flex-start',
-    },
-    headerIcon: {
-      width: 20,
-      height: 20,
-      marginRight: 10,
-    },
-    headerTitle: {
-      color: 'white',
-      fontSize: 20,
-      fontFamily: 'Oxanium_700Bold',
-    },
-    container: {
-      height: 2080, // Altura suficiente para todos los elementos
-    },
-    robot: {
-      position: 'absolute',
-      width: 150,
-      height: 150,
-      resizeMode: 'contain',
-    },
-    level: {
-      position: 'absolute',
-    },
-    levelImage: {
-      width: 80,
-      height: 80,
-      resizeMode: 'contain',
-    },
-    speechBubbleContainer: {
-      position: 'absolute',
-      top: 390 - 100, // Posiciona el globo encima del nivel 5 (current)
-      left: 230 - 30,
-      alignItems: 'center',
-      zIndex: 10,
-    },
-    speechBubble: {
-      backgroundColor: '#F1DBFF',
-      borderRadius: 20,
-      borderWidth: 3,
-      borderColor: '#A07CBC',
-      padding: 15,
-      width: 240,
-      alignItems: 'center',
-    },
-    bubbleTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: 10,
-      textAlign: 'center',
-    },
-    bubbleButton: {
-      backgroundColor: '#A07CBC',
-      borderRadius: 20,
-      paddingVertical: 8,
-      paddingHorizontal: 25,
-    },
-    bubbleButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    bubbleArrow: {
-      width: 0,
-      height: 0,
-      borderLeftWidth: 15,
-      borderRightWidth: 15,
-      borderTopWidth: 20,
-      borderStyle: 'solid',
-      backgroundColor: 'transparent',
-      borderLeftColor: 'transparent',
-      borderRightColor: 'transparent',
-      borderTopColor: '#A07CBC',
-      marginTop: -3,
-    },
-  });
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#D5E6FF',
+  },
+  header: {
+    backgroundColor: '#987ACC',
+    paddingTop: 40,
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#52328C',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    alignSelf: 'flex-start',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  container: {
+    height: 2080,
+    position: 'relative',
+  },
+  robot: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    resizeMode: 'contain',
+  },
+});
+
+export default TiposDeDatosScreen;
