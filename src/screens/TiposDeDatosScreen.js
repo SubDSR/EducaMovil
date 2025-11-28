@@ -1,5 +1,5 @@
-// src/screens/TiposDeDatosScreen.js - CON OCULTAMIENTO DE TABS
-import React, { useState, useLayoutEffect } from 'react';
+// src/screens/TiposDeDatosScreen.js - VERSIÓN FINAL CON TABS GARANTIZADOS
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -8,6 +8,8 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  BackHandler,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -28,29 +30,65 @@ const nivelActualImage = require('../../assets/img/nivel-actual.png');
 const TiposDeDatosScreen = ({ navigation }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
 
-  // ✅ OCULTAR TABS al entrar a esta pantalla
-  useLayoutEffect(() => {
+  // ✅ FUNCIÓN PARA MOSTRAR TABS
+  const showTabs = () => {
     const parent = navigation.getParent();
     if (parent) {
       parent.setOptions({
-        tabBarStyle: { display: 'none' }, // Ocultar tabs
-        swipeEnabled: false, // Deshabilitar swipe
+        tabBarStyle: {
+          display: 'flex',
+          backgroundColor: '#52328C',
+          height: Platform.OS === 'android' ? 70 : 80,
+          paddingBottom: Platform.OS === 'android' ? 10 : 20,
+          paddingTop: 10,
+          justifyContent: 'center',
+        },
+        swipeEnabled: true,
       });
     }
+  };
+
+  // ✅ FUNCIÓN PARA OCULTAR TABS
+  const hideTabs = () => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' },
+        swipeEnabled: false,
+      });
+    }
+  };
+
+  // ✅ OCULTAR TABS al entrar a esta pantalla
+  useLayoutEffect(() => {
+    hideTabs();
 
     // ✅ MOSTRAR TABS al salir de esta pantalla
     return () => {
-      if (parent) {
-        parent.setOptions({
-          tabBarStyle: {
-            backgroundColor: '#52328C',
-            height: 80,
-            justifyContent: 'center',
-          },
-          swipeEnabled: false,
-        });
-      }
+      showTabs();
     };
+  }, [navigation]);
+
+  // 🚫 BLOQUEAR BOTÓN ATRÁS - REGRESAR A CURSOS
+  useEffect(() => {
+    const backAction = () => {
+      // ✅ Mostrar tabs ANTES de navegar
+      showTabs();
+      
+      // Pequeño delay para asegurar que los tabs se muestren
+      setTimeout(() => {
+        navigation.navigate('Cursos');
+      }, 50);
+      
+      return true; // ✅ Bloquea el comportamiento por defecto
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
   }, [navigation]);
 
   // Datos de las lecciones
@@ -91,7 +129,13 @@ const TiposDeDatosScreen = ({ navigation }) => {
   };
 
   const handleGoBack = () => {
-    navigation.navigate('Cursos');
+    // ✅ Mostrar tabs ANTES de navegar
+    showTabs();
+    
+    // Pequeño delay para asegurar que los tabs se muestren
+    setTimeout(() => {
+      navigation.navigate('Cursos');
+    }, 50);
   };
 
   return (
@@ -136,7 +180,7 @@ const TiposDeDatosScreen = ({ navigation }) => {
           >
             {lesson.status === 'current' ? (
               <Image 
-                source={nivelActualImage}  // Usamos la imagen de "nivel-actual.png"
+                source={nivelActualImage}
                 style={styles.levelImage}
               />
             ) : null}
@@ -193,6 +237,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 150,
     height: 150,
+    resizeMode: 'contain',
+  },
+  levelImage: {
+    width: 80,
+    height: 80,
     resizeMode: 'contain',
   },
 });

@@ -1,5 +1,5 @@
-// src/screens/PerfilScreen.js
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+// src/screens/PerfilScreen.js - SIN MODIFICACIÓN DE TABS
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -18,20 +18,7 @@ export default function PerfilScreen({ route, navigation }) {
   const [userInfo, setUserInfo] = useState(null);
   const [email, setEmail] = useState('');
 
-  // ✅ MOSTRAR TABS Y PERMITIR SWIPE
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.setOptions({
-        tabBarStyle: {
-          backgroundColor: '#52328C',
-          height: 80,
-          justifyContent: 'center',
-        },
-        swipeEnabled: true, // ✅ Permitir swipe
-      });
-    }
-  }, [navigation]);
+  // ❌ ELIMINADO: useLayoutEffect que modificaba tabBarStyle
 
   // Cargar información del usuario al montar el componente
   useEffect(() => {

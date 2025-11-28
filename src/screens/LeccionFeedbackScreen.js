@@ -1,4 +1,4 @@
-// src/screens/LeccionFeedbackScreen.js
+// src/screens/LeccionFeedbackScreen.js - CON BLOQUEO DE BOTÓN ATRÁS
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -9,6 +9,8 @@ import {
   Image,
   Animated,
   Dimensions,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -40,6 +42,43 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
         swipeEnabled: false,
       });
     }
+  }, [navigation]);
+
+  // 🚫 BLOQUEAR BOTÓN DE RETROCESO DE ANDROID
+  useEffect(() => {
+    const backAction = () => {
+      // Mostrar alerta en lugar de permitir retroceso
+      Alert.alert(
+        "¿Seguro que quieres salir?",
+        "Perderás tu progreso si regresas ahora.",
+        [
+          {
+            text: "Cancelar",
+            onPress: () => null,
+            style: "cancel"
+          },
+          { 
+            text: "Salir", 
+            onPress: () => {
+              // Resetear navegación para prevenir volver atrás
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Cursos' }],
+              });
+            },
+            style: "destructive"
+          }
+        ]
+      );
+      return true; // ✅ Bloquea el comportamiento por defecto
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // ✅ Limpiar al desmontar
   }, [navigation]);
 
   // 🔍 Cargar información del usuario al montar el componente
@@ -117,6 +156,7 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
   }, [floatAnim]);
 
   const handleContinue = () => {
+    // ✅ Navegar a TiposDeDatos (TiposDeDatos se encargará de ocultar tabs)
     navigation.navigate('TiposDeDatos');
   };
 

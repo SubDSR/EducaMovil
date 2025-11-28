@@ -1,4 +1,4 @@
-// src/screens/LoginScreen.js - CORREGIDO PARA GUARDAR EN ASYNCSTORAGE
+// src/screens/LoginScreen.js - CON KEYBOARDAVOIDINGVIEW
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
@@ -11,6 +11,11 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useFonts, Oxanium_700Bold, Oxanium_600SemiBold } from '@expo-google-fonts/oxanium';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +40,6 @@ export default function LoginScreen({ navigation }) {
   // Configuración de Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: '980386025823-tcm16nn8kv1hcgq3bvt63bqp09odng6u.apps.googleusercontent.com',
-    //iosClientId: 'TU_IOS_CLIENT_ID.apps.googleusercontent.com', // Si tienes iOS
     webClientId: '980386025823-ldlas1541tmj65l8t919j5vt7ihril8f.apps.googleusercontent.com',
   });
 
@@ -57,29 +61,10 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // Verificar si hay un usuario guardado al iniciar
-  // COMENTADO: Para que siempre pida login
-  // useEffect(() => {
-  //   checkLocalUser();
-  // }, []);
-
   // Manejar la respuesta de Google
   useEffect(() => {
     handleGoogleSignIn();
   }, [response]);
-
-  const checkLocalUser = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('@user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        // Si hay usuario guardado, ir directamente a Welcome
-        navigation.replace('Welcome', { email: user.email });
-      }
-    } catch (error) {
-      console.log('Error checking local user:', error);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     if (response?.type === 'success') {
@@ -89,11 +74,7 @@ export default function LoginScreen({ navigation }) {
         const userInfo = await getUserInfo(accessToken);
         
         if (userInfo) {
-          // ✅ Guardar usuario en AsyncStorage (YA ESTABA CORRECTO)
           await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
-          console.log('✅ Usuario Google guardado:', userInfo);
-          
-          // Navegar a Welcome con el email del usuario
           navigation.replace('Welcome', { email: userInfo.email });
         }
       } catch (error) {
@@ -121,7 +102,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // ✅ CORREGIDO: Ahora guarda en AsyncStorage
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
@@ -130,14 +110,11 @@ export default function LoginScreen({ navigation }) {
 
     if (email.trim().toLowerCase().endsWith('@unmsm.edu.pe')) {
       try {
-        // ✅ GUARDAR USUARIO EN ASYNCSTORAGE
         const userInfo = {
           email: email.trim().toLowerCase(),
         };
         
         await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
-        console.log('✅ Usuario UNMSM guardado en AsyncStorage:', userInfo);
-        
         navigation.navigate('Welcome', { email: userInfo.email });
       } catch (error) {
         console.error('Error guardando usuario:', error);
@@ -175,69 +152,84 @@ export default function LoginScreen({ navigation }) {
   return (
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
-        <Image source={unmsmLogo} style={styles.logo} />
-        <View style={styles.container}>
-          <Text style={styles.title}>EducaMovil</Text>
-          <Text style={styles.stepText}>Bienvenido de vuelta</Text>
-          <Image source={robotImage} style={styles.robotImage} />
-          <Text style={styles.registerLabel}>Iniciar Sesión</Text>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <ScrollView 
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Image source={unmsmLogo} style={styles.logo} />
+              
+              <View style={styles.container}>
+                <Text style={styles.title}>EducaMovil</Text>
+                <Text style={styles.stepText}>Bienvenido de vuelta</Text>
+                <Image source={robotImage} style={styles.robotImage} />
+                <Text style={styles.registerLabel}>Iniciar Sesión</Text>
 
-          {/* Campo de Correo */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#828282" />
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico"
-              placeholderTextColor="#828282"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+                {/* Campo de Correo */}
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#828282" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Correo electrónico"
+                    placeholderTextColor="#828282"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
 
-          {/* Campo de Contraseña */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#828282" />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              placeholderTextColor="#828282"
-              secureTextEntry={!isPasswordVisible}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-              <Ionicons
-                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                size={22}
-                color="#828282"
-              />
-            </TouchableOpacity>
-          </View>
+                {/* Campo de Contraseña */}
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#828282" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Contraseña"
+                    placeholderTextColor="#828282"
+                    secureTextEntry={!isPasswordVisible}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                    <Ionicons
+                      name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color="#828282"
+                    />
+                  </TouchableOpacity>
+                </View>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-          </TouchableOpacity>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                  <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.googleBtn} 
-            onPress={handleGoogleLogin}
-            disabled={!request}
-          >
-            <Image source={googleIcon} style={styles.googleIcon} />
-            <Text style={styles.btnText}>Continuar con Google</Text>
-          </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.googleBtn} 
+                  onPress={handleGoogleLogin}
+                  disabled={!request}
+                >
+                  <Image source={googleIcon} style={styles.googleIcon} />
+                  <Text style={styles.btnText}>Continuar con Google</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.registerLink}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.registerLinkText}>
-              ¿No tienes cuenta? <Text style={styles.registerLinkBold}>Regístrate</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+                <TouchableOpacity 
+                  style={styles.registerLink}
+                  onPress={() => navigation.navigate('Register')}
+                >
+                  <Text style={styles.registerLinkText}>
+                    ¿No tienes cuenta? <Text style={styles.registerLinkBold}>Regístrate</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -250,6 +242,14 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 20,
+  },
   logo: {
     width: 50,
     height: 60,
@@ -259,10 +259,9 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   container: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingTop: 80,
   },
   loadingContainer: {
     flex: 1,
@@ -358,6 +357,7 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     marginTop: 10,
+    marginBottom: 20,
   },
   registerLinkText: {
     fontSize: 14,

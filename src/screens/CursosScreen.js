@@ -1,5 +1,5 @@
-// src/screens/CursosScreen.js - CON CÓDIGO PARA MOSTRAR TABS
-import React, { useLayoutEffect } from 'react';
+// src/screens/CursosScreen.js - SIN MODIFICACIÓN DE TABS
+import React from 'react';
 import {
   SafeAreaView,
   View,
@@ -11,21 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 const CursosScreen = ({ navigation }) => {
-  
-  // ✅ MOSTRAR TABS al entrar a esta pantalla
-  useLayoutEffect(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.setOptions({
-        tabBarStyle: {
-          backgroundColor: '#52328C',
-          height: 80,
-          justifyContent: 'center',
-        },
-        swipeEnabled: true, // ✅ Permitir swipe
-      });
-    }
-  }, [navigation]);
+  // ❌ ELIMINADO: useLayoutEffect que modificaba tabBarStyle
 
   const cursos = [
     {
