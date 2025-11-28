@@ -1,5 +1,5 @@
-// src/screens/LeccionFeedbackScreen.js - VERSIÓN FINAL CON SISTEMA DE PERFIL
-import React, { useEffect, useRef, useState } from 'react';
+// src/screens/LeccionFeedbackScreen.js
+import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -31,6 +31,17 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
   // Animación flotante del robot
   const floatAnim = useRef(new Animated.Value(0)).current;
 
+  // ❌ OCULTAR TABS al entrar a esta pantalla
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' },
+        swipeEnabled: false,
+      });
+    }
+  }, [navigation]);
+
   // 🔍 Cargar información del usuario al montar el componente
   useEffect(() => {
     loadUserInfo();
@@ -38,7 +49,6 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
 
   const loadUserInfo = async () => {
     try {
-      // Primero intentamos obtener los datos de AsyncStorage
       const userData = await AsyncStorage.getItem('@user');
       
       if (userData) {
@@ -46,11 +56,9 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
         setUserInfo(user);
         setEmail(user.email);
         
-        // Obtener el nombre usando la misma lógica que PerfilScreen
         const name = getUserData(user.email, user);
         setUserName(name);
       } else {
-        // Si no hay datos en AsyncStorage, intentamos obtener el email guardado
         const savedEmail = await AsyncStorage.getItem('@user_email');
         if (savedEmail) {
           setEmail(savedEmail);
@@ -59,7 +67,6 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
         }
       }
     } catch (error) {
-      console.log('Error loading user info:', error);
       setUserName('Usuario');
     }
   };
@@ -110,7 +117,6 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
   }, [floatAnim]);
 
   const handleContinue = () => {
-    // ✅ Navegar de vuelta a TiposDeDatos
     navigation.navigate('TiposDeDatos');
   };
 

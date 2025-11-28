@@ -1,106 +1,144 @@
-// src/screens/CursosScreen.js - VERSIÓN ACTUALIZADA
-import React from 'react';
+// src/screens/CursosScreen.js - CON CÓDIGO PARA MOSTRAR TABS
+import React, { useLayoutEffect } from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const coursesData = [
-  { 
-    id: '1', 
-    title: 'Tipos de datos', 
-    description: 'Aprende a guardar y usar diferentes tipos de datos', 
-    progress: 4, 
-    total: 25,
-    screen: 'TiposDeDatos' // Pantalla de destino
-  },
-  { 
-    id: '2', 
-    title: 'Estructuras de control', 
-    description: 'Controla acciones con if, else y ciclos repetitivos', 
-    progress: 0, 
-    total: 25,
-    screen: 'TiposDeDatos' // Puedes cambiar esto más adelante
-  },
-  { 
-    id: '3', 
-    title: 'Funciones', 
-    description: 'Crea funciones para simplificar y reutilizar instrucciones', 
-    progress: 0, 
-    total: 25,
-    screen: 'TiposDeDatos'
-  },
-  { 
-    id: '4', 
-    title: 'Algoritmos', 
-    description: 'Secuencia de pasos para resolver un problema', 
-    progress: 0, 
-    total: 25,
-    screen: 'VisualizadorAlgoritmos' // Va directo al visualizador
-  },
-  { 
-    id: '5', 
-    title: 'Arreglos', 
-    description: 'Agrupa y organiza datos en arreglos', 
-    progress: 0, 
-    total: 25,
-    screen: 'TiposDeDatos'
-  },
-];
+const CursosScreen = ({ navigation }) => {
+  
+  // ✅ MOSTRAR TABS al entrar a esta pantalla
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: '#52328C',
+          height: 80,
+          justifyContent: 'center',
+        },
+        swipeEnabled: false,
+      });
+    }
+  }, [navigation]);
 
-const ProgressBar = ({ progress, total }) => {
-  const progressPercent = total > 0 ? (progress / total) * 100 : 0;
+  const cursos = [
+    {
+      id: 1,
+      nombre: 'Tipos de datos',
+      descripcion: 'Aprende a guardar y usar diferentes tipos de datos',
+      progreso: 4,
+      total: 25,
+      color: '#68B268',
+      screen: 'TiposDeDatos',
+    },
+    {
+      id: 2,
+      nombre: 'Estructuras de control',
+      descripcion: 'Controla acciones con if, else y ciclos repetitivos',
+      progreso: 0,
+      total: 25,
+      color: '#B0D4FF',
+      screen: 'EstructurasControl',
+      disabled: true,
+    },
+    {
+      id: 3,
+      nombre: 'Funciones',
+      descripcion: 'Crea funciones para simplificar y reutilizar instrucciones',
+      progreso: 0,
+      total: 25,
+      color: '#B0D4FF',
+      screen: 'Funciones',
+      disabled: true,
+    },
+    {
+      id: 4,
+      nombre: 'Algoritmos',
+      descripcion: 'Secuencia de pasos para resolver un problema',
+      progreso: 0,
+      total: 25,
+      color: '#B0D4FF',
+      screen: 'VisualizadorAlgoritmos',
+      disabled: true,
+    },
+    {
+      id: 5,
+      nombre: 'Arreglos',
+      descripcion: 'Organiza datos en listas ordenadas',
+      progreso: 0,
+      total: 25,
+      color: '#B0D4FF',
+      screen: 'Arreglos',
+      disabled: true,
+    },
+  ];
+
+  const handleCursoPress = (curso) => {
+    if (!curso.disabled) {
+      navigation.navigate(curso.screen);
+    }
+  };
+
   return (
-    <View style={styles.progressBarContainer}>
-      <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-    </View>
-  );
-};
-
-const CourseCard = ({ title, description, progress, total, screen, navigation }) => (
-  <TouchableOpacity
-    style={styles.cardContainer}
-    onPress={() => {
-      if (screen === 'VisualizadorAlgoritmos') {
-        navigation.navigate(screen, { algorithmName: 'Bubble sort' });
-      } else {
-        navigation.navigate(screen, { lessonTitle: title });
-      }
-    }}
-  >
-    <Text style={styles.cardTitle}>{title}</Text>
-    <Text style={styles.cardDescription}>{description}</Text>
-    <View style={styles.progressInfo}>
-      <Text style={styles.sectionText}>SECCIÓN</Text>
-      <Text style={styles.progressText}>{`${progress}/${total}`}</Text>
-    </View>
-    <ProgressBar progress={progress} total={total} />
-  </TouchableOpacity>
-);
-
-export default function CursosScreen({ navigation }) {
-  return (
-    <LinearGradient colors={['#E6F7FF', '#D5E6FF']} style={styles.gradient}>
+    <LinearGradient colors={['#B0ADFF', '#CCFAFF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Cursos</Text>
         </View>
 
-        <FlatList
-          data={coursesData}
-          renderItem={({ item }) => <CourseCard {...item} navigation={navigation} />}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        <ScrollView contentContainerStyle={styles.container}>
+          {cursos.map((curso) => (
+            <TouchableOpacity
+              key={curso.id}
+              style={[
+                styles.cursoCard,
+                curso.disabled && styles.cursoCardDisabled,
+              ]}
+              onPress={() => handleCursoPress(curso)}
+              disabled={curso.disabled}
+            >
+              <View style={styles.cursoHeader}>
+                <Text style={styles.cursoNombre}>{curso.nombre}</Text>
+                {curso.disabled && (
+                  <View style={styles.lockBadge}>
+                    <Text style={styles.lockIcon}>🔒</Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.cursoDescripcion}>{curso.descripcion}</Text>
+
+              <View style={styles.progressSection}>
+                <Text style={styles.progressLabel}>SECCIÓN</Text>
+                <Text style={styles.progressText}>
+                  {curso.progreso}/{curso.total}
+                </Text>
+              </View>
+
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${(curso.progreso / curso.total) * 100}%`,
+                      backgroundColor: curso.color,
+                    },
+                  ]}
+                />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
-}
+};
 
 const styles = StyleSheet.create({
   gradient: {
@@ -108,28 +146,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
   header: {
-    backgroundColor: '#E6EEFF',
-    paddingVertical: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 20,
+    backgroundColor: 'transparent',
   },
   headerTitle: {
-    fontSize: 26,
-    paddingTop: 40,
-    paddingBottom: 20,
-    fontFamily: 'Roboto_500Medium',
-    color: '#333',
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0E0220',
   },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 80,
+  container: {
+    padding: 20,
+    paddingBottom: 100, // Espacio para los tabs
   },
-  cardContainer: {
-    backgroundColor: 'white',
+  cursoCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -139,41 +172,61 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 22,
-    fontFamily: 'Oxanium_700Bold',
-    marginBottom: 5,
+  cursoCardDisabled: {
+    opacity: 0.6,
   },
-  cardDescription: {
-    fontSize: 14,
-    fontFamily: 'Oxanium_600SemiBold',
-    color: '#666',
-    marginBottom: 15,
-  },
-  progressInfo: {
+  cursoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  sectionText: {
+  cursoNombre: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0E0220',
+    flex: 1,
+  },
+  lockBadge: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 12,
+    padding: 4,
+  },
+  lockIcon: {
+    fontSize: 16,
+  },
+  cursoDescripcion: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  progressSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
     fontSize: 12,
     color: '#888',
     fontWeight: '600',
   },
   progressText: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 14,
+    color: '#555',
     fontWeight: '600',
   },
   progressBarContainer: {
-    height: 20,
-    backgroundColor: '#D7D7D7',
-    borderRadius: 64,
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#68B268',
-    borderRadius: 64,
+    borderRadius: 4,
   },
 });
+
+export default CursosScreen;

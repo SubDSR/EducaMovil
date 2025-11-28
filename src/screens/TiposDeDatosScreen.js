@@ -1,5 +1,5 @@
-// src/screens/TiposDeDatosScreen.js - NAVEGACIÓN CORREGIDA
-import React, { useState } from 'react';
+// src/screens/TiposDeDatosScreen.js - CON OCULTAMIENTO DE TABS
+import React, { useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -26,6 +26,31 @@ const robot8 = require('../../assets/img/robot-8.png');
 const TiposDeDatosScreen = ({ navigation }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
 
+  // ✅ OCULTAR TABS al entrar a esta pantalla
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' }, // Ocultar tabs
+        swipeEnabled: false, // Deshabilitar swipe
+      });
+    }
+
+    // ✅ MOSTRAR TABS al salir de esta pantalla
+    return () => {
+      if (parent) {
+        parent.setOptions({
+          tabBarStyle: {
+            backgroundColor: '#52328C',
+            height: 80,
+            justifyContent: 'center',
+          },
+          swipeEnabled: false,
+        });
+      }
+    };
+  }, [navigation]);
+
   // Datos de las lecciones
   const lessons = [
     { id: 1, title: 'Tipos de datos fundamentales', position: { left: 50, top: 90 }, status: 'unlocked' },
@@ -42,10 +67,8 @@ const TiposDeDatosScreen = ({ navigation }) => {
 
   const handleLevelPress = (lesson) => {
     if (lesson.status === 'current') {
-      // Mostrar u ocultar la burbuja
       setSelectedLevel(selectedLevel?.id === lesson.id ? null : lesson);
     } else if (lesson.status === 'unlocked') {
-      // Iniciar lección directamente
       startLesson(lesson);
     }
   };
@@ -59,16 +82,14 @@ const TiposDeDatosScreen = ({ navigation }) => {
   };
 
   const getBubblePosition = (levelPosition) => {
-    // Posicionar la burbuja arriba del nivel
     return {
       left: levelPosition.left - 100,
       top: levelPosition.top - 120,
     };
   };
 
-  // ✅ FUNCIÓN CORREGIDA - Navega a Cursos (Aprende)
   const handleGoBack = () => {
-    navigation.navigate('Aprende'); // Navega a la pestaña de Cursos
+    navigation.navigate('Cursos');
   };
 
   return (
@@ -76,7 +97,7 @@ const TiposDeDatosScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={handleGoBack} // ✅ Ahora navega a Cursos
+          onPress={handleGoBack}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -93,7 +114,7 @@ const TiposDeDatosScreen = ({ navigation }) => {
         <Image source={robot7} style={[styles.robot, { left: 200, top: 1150 }]} />
         <Image source={robot8} style={[styles.robot, { left: 200, top: 1700 }]} />
 
-        {/* Burbuja de lección (solo para nivel actual) */}
+        {/* Burbuja de lección */}
         {selectedLevel && (
           <LessonBubble
             title={selectedLevel.title}

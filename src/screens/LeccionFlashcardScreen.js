@@ -1,5 +1,5 @@
-// src/screens/LeccionFlashcardScreen.js - SIN TEMPORIZADOR
-import React, { useState } from 'react';
+// src/screens/LeccionFlashcardScreen.js - SIN TEMPORIZADOR + OCULTAR TABS
+import React, { useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -19,6 +19,30 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
   
   const [currentCard, setCurrentCard] = useState(0);
+
+  // ✅ Ocultar tabs al entrar a esta pantalla
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' },
+        swipeEnabled: false,
+      });
+    }
+
+    return () => {
+      if (parent) {
+        parent.setOptions({
+          tabBarStyle: {
+            backgroundColor: '#52328C',
+            height: 80,
+            justifyContent: 'center',
+          },
+          swipeEnabled: false,
+        });
+      }
+    };
+  }, [navigation]);
 
   // Datos de las flashcards
   const flashcards = [

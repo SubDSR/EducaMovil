@@ -1,3 +1,4 @@
+// src/screens/LoginScreen.js - CORREGIDO PARA GUARDAR EN ASYNCSTORAGE
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
@@ -88,8 +89,9 @@ export default function LoginScreen({ navigation }) {
         const userInfo = await getUserInfo(accessToken);
         
         if (userInfo) {
-          // Guardar usuario en AsyncStorage
+          // ✅ Guardar usuario en AsyncStorage (YA ESTABA CORRECTO)
           await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
+          console.log('✅ Usuario Google guardado:', userInfo);
           
           // Navegar a Welcome con el email del usuario
           navigation.replace('Welcome', { email: userInfo.email });
@@ -119,14 +121,28 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleLogin = () => {
+  // ✅ CORREGIDO: Ahora guarda en AsyncStorage
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     if (email.trim().toLowerCase().endsWith('@unmsm.edu.pe')) {
-      navigation.navigate('Welcome', { email: email.trim().toLowerCase() });
+      try {
+        // ✅ GUARDAR USUARIO EN ASYNCSTORAGE
+        const userInfo = {
+          email: email.trim().toLowerCase(),
+        };
+        
+        await AsyncStorage.setItem('@user', JSON.stringify(userInfo));
+        console.log('✅ Usuario UNMSM guardado en AsyncStorage:', userInfo);
+        
+        navigation.navigate('Welcome', { email: userInfo.email });
+      } catch (error) {
+        console.error('Error guardando usuario:', error);
+        Alert.alert('Error', 'No se pudo guardar la sesión');
+      }
     } else {
       Alert.alert(
         "Correo Inválido",
