@@ -23,6 +23,8 @@ const robot6 = require('../../assets/img/robot-6.png');
 const robot7 = require('../../assets/img/robot-7.png');
 const robot8 = require('../../assets/img/robot-8.png');
 
+const nivelActualImage = require('../../assets/img/nivel-actual.png');
+
 const TiposDeDatosScreen = ({ navigation }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
 
@@ -53,16 +55,16 @@ const TiposDeDatosScreen = ({ navigation }) => {
 
   // Datos de las lecciones
   const lessons = [
-    { id: 1, title: 'Tipos de datos fundamentales', position: { left: 50, top: 90 }, status: 'unlocked' },
-    { id: 2, title: 'Enteros y decimales', position: { left: 140, top: 150 }, status: 'unlocked' },
-    { id: 3, title: 'Cadenas de texto', position: { left: 230, top: 210 }, status: 'unlocked' },
-    { id: 4, title: 'Booleanos', position: { left: 190, top: 300 }, status: 'unlocked' },
-    { id: 5, title: 'Conversión de tipos', position: { left: 230, top: 390 }, status: 'current' },
-    { id: 6, title: 'Operadores aritméticos', position: { left: 140, top: 450 }, status: 'locked' },
-    { id: 7, title: 'Operadores lógicos', position: { left: 50, top: 510 }, status: 'locked' },
-    { id: 8, title: 'Operadores de comparación', position: { left: 90, top: 600 }, status: 'locked' },
-    { id: 9, title: 'Variables y constantes', position: { left: 50, top: 690 }, status: 'locked' },
-    { id: 10, title: 'Alcance de variables', position: { left: 140, top: 750 }, status: 'locked' },
+    { id: 1, title: 'Tipos de datos fundamentales', position: { left: 50, top: 20 }, status: 'unlocked' },
+    { id: 2, title: 'Enteros y decimales', position: { left: 140, top: 80 }, status: 'unlocked' },
+    { id: 3, title: 'Cadenas de texto', position: { left: 230, top: 140 }, status: 'unlocked' },
+    { id: 4, title: 'Booleanos', position: { left: 190, top: 230 }, status: 'unlocked' },
+    { id: 5, title: 'Conversión de tipos', position: { left: 230, top: 320 }, status: 'current' },
+    { id: 6, title: 'Operadores aritméticos', position: { left: 140, top: 380 }, status: 'locked' },
+    { id: 7, title: 'Operadores lógicos', position: { left: 50, top: 440 }, status: 'locked' },
+    { id: 8, title: 'Operadores de comparación', position: { left: 90, top: 530 }, status: 'locked' },
+    { id: 9, title: 'Variables y constantes', position: { left: 50, top: 620 }, status: 'locked' },
+    { id: 10, title: 'Alcance de variables', position: { left: 140, top: 680 }, status: 'locked' },
   ];
 
   const handleLevelPress = (lesson) => {
@@ -107,12 +109,12 @@ const TiposDeDatosScreen = ({ navigation }) => {
 
       <ScrollView contentContainerStyle={styles.container}>
         {/* Robots decorativos */}
-        <Image source={robot3} style={[styles.robot, { left: 30, top: 240 }]} />
-        <Image source={robot4} style={[styles.robot, { left: 30, top: 1440 }]} />
-        <Image source={robot5} style={[styles.robot, { left: 30, top: 850 }]} />
-        <Image source={robot6} style={[styles.robot, { left: 200, top: 520 }]} />
-        <Image source={robot7} style={[styles.robot, { left: 200, top: 1150 }]} />
-        <Image source={robot8} style={[styles.robot, { left: 200, top: 1700 }]} />
+        <Image source={robot3} style={[styles.robot, { left: 30, top: 170 }]} />
+        <Image source={robot4} style={[styles.robot, { left: 30, top: 1370 }]} />
+        <Image source={robot5} style={[styles.robot, { left: 30, top: 780 }]} />
+        <Image source={robot6} style={[styles.robot, { left: 200, top: 450 }]} />
+        <Image source={robot7} style={[styles.robot, { left: 200, top: 1080 }]} />
+        <Image source={robot8} style={[styles.robot, { left: 200, top: 1630 }]} />
 
         {/* Burbuja de lección */}
         {selectedLevel && (
@@ -131,8 +133,14 @@ const TiposDeDatosScreen = ({ navigation }) => {
             status={lesson.status}
             style={lesson.position}
             onPress={() => handleLevelPress(lesson)}
-            showPlayIcon={lesson.status === 'current'}
-          />
+          >
+            {lesson.status === 'current' ? (
+              <Image 
+                source={nivelActualImage}  // Usamos la imagen de "nivel-actual.png"
+                style={styles.levelImage}
+              />
+            ) : null}
+          </LevelNode>
         ))}
 
         {/* Niveles adicionales bloqueados */}

@@ -1,4 +1,3 @@
-// src/screens/LeccionQuizScreen.js - ROBOTS A LOS LADOS
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -18,6 +17,8 @@ import TimerProgressBar from '../components/TimerProgressBar';
 const robotQuestion = require('../../assets/img/robot-9.png'); // Robot izquierdo (pregunta)
 const robotAnswer = require('../../assets/img/robot-10.png'); // Robot derecho (alternativas)
 const robotFeedback = require('../../assets/img/robot-11.png'); // Robot celebrando
+
+const perfilButton = require('../../assets/img/perfil-button.png');
 
 const LeccionQuizScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
@@ -105,7 +106,10 @@ const LeccionQuizScreen = ({ navigation, route }) => {
 
   const getButtonStyle = (optionId) => {
     if (!showFeedback) {
-      return selectedAnswer === optionId ? styles.optionButtonSelected : styles.optionButton;
+      return [
+        styles.optionButton,
+        selectedAnswer === optionId && styles.optionButtonSelected,
+      ];
     }
 
     const option = quizData.options.find(opt => opt.id === optionId);
@@ -119,7 +123,6 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   };
 
   const getButtonTextStyle = (optionId) => {
-    // ✅ MISMO TAMAÑO siempre (16px, bold)
     const baseStyle = {
       fontSize: 16,
       fontWeight: '600',
@@ -202,7 +205,7 @@ const LeccionQuizScreen = ({ navigation, route }) => {
 
           {/* Feedback */}
           {showFeedback && (
-            <View style={[
+            <View style={[ 
               styles.feedbackBubble, 
               isCorrect ? styles.feedbackBubbleCorrect : styles.feedbackBubbleIncorrect
             ]}>
@@ -212,9 +215,9 @@ const LeccionQuizScreen = ({ navigation, route }) => {
                   size={24} 
                   color={isCorrect ? "#4CAF50" : "#FF6B6B"} 
                 />
-                <Text style={[
-                  styles.feedbackTitle,
-                  isCorrect ? styles.feedbackTitleCorrect : styles.feedbackTitleIncorrect
+                <Text style={[ 
+                  styles.feedbackTitle, 
+                  isCorrect ? styles.feedbackTitleCorrect : styles.feedbackTitleIncorrect 
                 ]}>
                   {isCorrect ? "Respuesta correcta" : "Respuesta incorrecta"}
                 </Text>
@@ -238,8 +241,8 @@ const LeccionQuizScreen = ({ navigation, route }) => {
               <Text style={styles.verifyButtonText}>Verificar</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <Ionicons name="arrow-forward" size={32} color="white" />
+            <TouchableOpacity onPress={handleNext} style={styles.nextButtonContainer}>
+               <Image source={perfilButton} style={styles.nextButtonImage} />
             </TouchableOpacity>
           )}
         </View>
@@ -295,10 +298,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   robotQuestionImage: {
-    width: 100,  // ✅ Más grande (antes 80)
-    height: 100,
+    width: 130,  // ✅ Más grande (antes 80)
+    height: 130,
     resizeMode: 'contain',
-    marginRight: 10,
+    marginRight: -30,
   },
   speechBubble: {
     flex: 1,
@@ -326,18 +329,18 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flex: 1,
     gap: 12,
-    marginRight: 10,
   },
   optionButton: {
     backgroundColor: '#B0D4FF',
-    borderRadius: 16,
-    paddingVertical: 16, // ✅ Padding fijo
+    borderRadius: 16,  // Asegura que todos los botones tengan bordes redondeados
+    paddingVertical: 16, // Padding fijo
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 55, // ✅ Altura mínima fija
+    minHeight: 55, // Altura mínima fija
     borderWidth: 2,
     borderColor: 'transparent',
+    width: '100%',  // Asegura que el botón ocupe todo el ancho disponible
   },
   optionButtonSelected: {
     backgroundColor: '#2B5A9E',
@@ -346,34 +349,17 @@ const styles = StyleSheet.create({
   optionButtonDisabled: {
     opacity: 0.5,
   },
-  // ✅ Estilos de texto simplificados (ya no se usan directamente)
-  optionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  optionTextLight: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  correctAnswer: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#45A049',
-  },
-  incorrectAnswer: {
-    backgroundColor: '#FF6B6B',
-    borderColor: '#E74C3C',
-  },
   robotAnswerImage: {
-    width: 120,  // ✅ Más grande (antes 90)
-    height: 120,
+    width: 150,  // ✅ Más grande (antes 90)
+    height: 150,
     resizeMode: 'contain',
+    marginLeft: -30,
   },
   robotFeedbackImage: {
-    width: 120,  // ✅ Más grande (antes 90)
-    height: 120,
+    width: 150,  // ✅ Más grande (antes 90)
+    height: 150,
     resizeMode: 'contain',
+    marginLeft: -30,
   },
   feedbackBubble: {
     borderRadius: 20,

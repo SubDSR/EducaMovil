@@ -12,8 +12,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-// Imagen del robot azul
+// Imágenes
 const robot = require('../../assets/img/robot-5.png');
+const perfilButton = require('../../assets/img/perfil-button.png');
 
 const LeccionFlashcardScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
@@ -125,9 +126,8 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
             ))}
           </View>
 
-          {/* Robot azul con plataforma */}
+          {/* Robot azul SIN plataforma */}
           <View style={styles.robotContainer}>
-            <View style={styles.robotPlatform} />
             <Image source={robot} style={styles.robotImage} />
           </View>
         </ScrollView>
@@ -143,22 +143,9 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
 
           <View style={styles.controlsSpacer} />
 
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Ionicons name="arrow-forward" size={32} color="white" />
+          <TouchableOpacity onPress={handleNext} style={styles.nextButtonContainer}>
+            <Image source={perfilButton} style={styles.nextButtonImage} />
           </TouchableOpacity>
-        </View>
-
-        {/* Indicador de progreso */}
-        <View style={styles.progressIndicator}>
-          {flashcards.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.progressDot,
-                index === currentCard && styles.progressDotActive,
-              ]}
-            />
-          ))}
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -213,14 +200,14 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   whiteCard: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    padding: 10,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -228,6 +215,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   introText: {
+    padding: 10,
     fontSize: 15,
     color: '#333',
     lineHeight: 22,
@@ -255,16 +243,6 @@ const styles = StyleSheet.create({
   robotContainer: {
     alignItems: 'center',
     marginTop: 20,
-    position: 'relative',
-  },
-  robotPlatform: {
-    position: 'absolute',
-    bottom: 0,
-    width: 140,
-    height: 70,
-    backgroundColor: '#2B7BB9',
-    borderRadius: 70,
-    opacity: 0.3,
   },
   robotImage: {
     width: 200,
@@ -273,7 +251,7 @@ const styles = StyleSheet.create({
   },
   controls: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -295,35 +273,16 @@ const styles = StyleSheet.create({
   controlsSpacer: {
     flex: 1,
   },
-  nextButton: {
-    backgroundColor: '#7C3FE0',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+  nextButtonContainer: {
+    justifyContent: 'center',  // Centra verticalmente
+    alignItems: 'center',      // Centra horizontalmente
+    width: '100%',             // Asegura que ocupe todo el ancho disponible
   },
-  progressIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 15,
-    gap: 8,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#CCCCCC',
-  },
-  progressDotActive: {
-    backgroundColor: '#7C3FE0',
-    width: 24,
+
+  nextButtonImage: {
+    width: 70,
+    height: 70,
+    resizeMode: 'contain',
   },
 });
 
