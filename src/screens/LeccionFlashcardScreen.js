@@ -1,4 +1,4 @@
-// src/screens/LeccionFlashcardScreen.js - SIN TEMPORIZADOR + OCULTAR TABS
+// src/screens/LeccionFlashcardScreen.js - DISEÑO CORREGIDO
 import React, { useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -12,8 +12,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-// Imagen del robot
-const robot = require('../../assets/img/robot-2.png');
+// Imagen del robot azul
+const robot = require('../../assets/img/robot-5.png');
 
 const LeccionFlashcardScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
@@ -29,19 +29,6 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
         swipeEnabled: false,
       });
     }
-
-    return () => {
-      if (parent) {
-        parent.setOptions({
-          tabBarStyle: {
-            backgroundColor: '#52328C',
-            height: 80,
-            justifyContent: 'center',
-          },
-          swipeEnabled: false,
-        });
-      }
-    };
   }, [navigation]);
 
   // Datos de las flashcards
@@ -50,10 +37,26 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
       subtitle: 'Introducción',
       content: 'En programación, los tipos de datos definen la clase de información que puede manejar una variable dentro de un programa.',
       examples: [
-        { label: 'Enteros (int)', description: 'Números sin decimales, como 5 o -12', color: '#FFC8F4' },
-        { label: 'Reales (float/double)', description: 'Números con decimales, como 3.14 o -0.5', color: '#C8E5FF' },
-        { label: 'Cadenas (string)', description: 'Secuencias de caracteres, como "Hola"', color: '#E5C8FF' },
-        { label: 'Booleanos (bool)', description: 'Valores lógicos que representan V o F', color: '#C8FFE5' },
+        { 
+          label: 'Enteros (int):', 
+          description: 'Números sin decimales, como 5 o -12', 
+          color: '#FFC8F4' // Rosa
+        },
+        { 
+          label: 'Reales (float/double):', 
+          description: 'Números con decimales, como 3.14 o -0.5', 
+          color: '#C8E5FF' // Celeste
+        },
+        { 
+          label: 'Cadenas (string):', 
+          description: 'Texto compuesto por caracteres, como "Hola"', 
+          color: '#E5C8FF' // Morado
+        },
+        { 
+          label: 'Booleanos (bool):', 
+          description: 'Valores lógicos que representan V o F', 
+          color: '#C8FFE5' // Verde
+        },
       ],
     },
   ];
@@ -65,7 +68,6 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
     if (currentCard < flashcards.length - 1) {
       setCurrentCard(currentCard + 1);
     } else {
-      // Ir al quiz
       navigation.navigate('LeccionQuiz', { lessonTitle, lessonNumber });
     }
   };
@@ -83,7 +85,7 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   return (
     <LinearGradient colors={['#D5E6FF', '#E6F7FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header SIN temporizador */}
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -95,7 +97,7 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Solo barra de progreso estática */}
+          {/* Barra de progreso */}
           <View style={styles.progressBarContainer}>
             <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
           </View>
@@ -106,26 +108,28 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* Tarjeta de contenido */}
-          <View style={styles.flashcard}>
-            <Text style={styles.description}>{currentFlashcard.content}</Text>
-
-            {/* Ejemplos */}
-            <View style={styles.examplesContainer}>
-              {currentFlashcard.examples.map((example, index) => (
-                <View
-                  key={index}
-                  style={[styles.exampleCard, { backgroundColor: example.color }]}
-                >
-                  <Text style={styles.exampleLabel}>{example.label}</Text>
-                  <Text style={styles.exampleDescription}>{example.description}</Text>
-                </View>
-              ))}
-            </View>
+          {/* Card blanca con descripción */}
+          <View style={styles.whiteCard}>
+            <Text style={styles.introText}>{currentFlashcard.content}</Text>
           </View>
 
-          {/* Robot mascota */}
-          <Image source={robot} style={styles.robotImage} />
+          {/* Card blanca con tabla de tipos de datos */}
+          <View style={styles.whiteCard}>
+            {currentFlashcard.examples.map((example, index) => (
+              <View key={index} style={styles.tableRow}>
+                <View style={[styles.labelBox, { backgroundColor: example.color }]}>
+                  <Text style={styles.labelText}>{example.label}</Text>
+                </View>
+                <Text style={styles.descriptionText}>{example.description}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Robot azul con plataforma */}
+          <View style={styles.robotContainer}>
+            <View style={styles.robotPlatform} />
+            <Image source={robot} style={styles.robotImage} />
+          </View>
         </ScrollView>
 
         {/* Controles de navegación */}
@@ -211,49 +215,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 30,
     paddingBottom: 20,
-    alignItems: 'center',
   },
-  flashcard: {
+  whiteCard: {
     backgroundColor: 'white',
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 20,
-    width: '100%',
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginBottom: 20,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  description: {
-    fontSize: 16,
+  introText: {
+    fontSize: 15,
     color: '#333',
-    lineHeight: 24,
-    marginBottom: 20,
+    lineHeight: 22,
   },
-  examplesContainer: {
-    gap: 12,
-  },
-  exampleCard: {
-    padding: 15,
-    borderRadius: 12,
+  tableRow: {
     marginBottom: 12,
   },
-  exampleLabel: {
-    fontSize: 15,
+  labelBox: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  labelText: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
   },
-  exampleDescription: {
+  descriptionText: {
     fontSize: 14,
     color: '#555',
+    lineHeight: 20,
+    paddingLeft: 5,
+  },
+  robotContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    position: 'relative',
+  },
+  robotPlatform: {
+    position: 'absolute',
+    bottom: 0,
+    width: 140,
+    height: 70,
+    backgroundColor: '#2B7BB9',
+    borderRadius: 70,
+    opacity: 0.3,
   },
   robotImage: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 200,
     resizeMode: 'contain',
-    marginVertical: 20,
   },
   controls: {
     flexDirection: 'row',

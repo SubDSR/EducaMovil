@@ -63,7 +63,7 @@ function MainAppTabs({ route }) {
           backgroundColor: '#1F064D',
           height: '100%',
         },
-        swipeEnabled: false,
+        swipeEnabled: true, // ✅ Habilitar swipe entre tabs
       }}
     >
       <Tab.Screen

@@ -22,7 +22,7 @@ const CursosScreen = ({ navigation }) => {
           height: 80,
           justifyContent: 'center',
         },
-        swipeEnabled: false,
+        swipeEnabled: true, // ✅ Permitir swipe
       });
     }
   }, [navigation]);
@@ -153,9 +153,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0E0220',
+      fontSize: 28,
+      paddingTop: 40,
+      paddingBottom: 20,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 20,
   },
   container: {
     padding: 20,

@@ -100,7 +100,7 @@ const TiposDeDatosScreen = ({ navigation }) => {
           onPress={handleGoBack}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="menu" size={24} color="white" />
           <Text style={styles.headerTitle}>Tipos de datos</Text>
         </TouchableOpacity>
       </View>
@@ -158,17 +158,17 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#987ACC',
-    paddingTop: 40,
-    paddingBottom: 15,
-    paddingHorizontal: 15,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#52328C',
     borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     alignSelf: 'flex-start',
   },
   headerTitle: {

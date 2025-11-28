@@ -1,5 +1,5 @@
-// src/screens/LeccionQuizScreen.js - CON TEMPORIZADOR Y TIEMPO REAL
-import React, { useState, useEffect, useRef } from 'react';
+// src/screens/LeccionQuizScreen.js - ROBOTS A LOS LADOS
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -14,8 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import TimerProgressBar from '../components/TimerProgressBar';
 
-const robot = require('../../assets/img/robot-4.png');
-const robotBlue = require('../../assets/img/robot-5.png');
+// Robots
+const robotQuestion = require('../../assets/img/robot-9.png'); // Robot izquierdo (pregunta)
+const robotAnswer = require('../../assets/img/robot-10.png'); // Robot derecho (alternativas)
+const robotFeedback = require('../../assets/img/robot-11.png'); // Robot celebrando
 
 const LeccionQuizScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
@@ -28,6 +30,17 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   const startTime = useRef(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  // ❌ OCULTAR TABS
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' },
+        swipeEnabled: false,
+      });
+    }
+  }, [navigation]);
+
   // Datos del quiz
   const quizData = {
     question: '¿Qué tipo de números pueden almacenarse en una variable de tipo float?',
@@ -36,11 +49,11 @@ const LeccionQuizScreen = ({ navigation, route }) => {
       { id: 2, text: 'Decimales', isCorrect: true },
       { id: 3, text: 'Negativos', isCorrect: false },
     ],
-    correctExplanation: 'Un float se usa para guardar números con decimales, como 3.14 o -0.5.',
-    incorrectExplanation: 'Incorrecto. Un float se usa para guardar números con decimales.',
+    correctExplanation: 'Un float se usa para guardar números con decimales. Aunque también puede almacenar enteros, está pensado para manejar valores decimales.',
+    incorrectExplanation: 'Un float se usa para guardar números con decimales. Aunque también puede almacenar enteros, está pensado para manejar valores decimales.',
   };
 
-  // Calcular tiempo transcurrido cada segundo
+  // Calcular tiempo transcurrido
   useEffect(() => {
     const interval = setInterval(() => {
       if (!showFeedback && !isPaused) {
@@ -60,7 +73,6 @@ const LeccionQuizScreen = ({ navigation, route }) => {
 
   const handleVerify = () => {
     if (selectedAnswer) {
-      // Calcular tiempo final al momento de verificar
       const finalTime = Math.floor((Date.now() - startTime.current) / 1000);
       setElapsedTime(finalTime);
       setShowFeedback(true);
@@ -77,14 +89,13 @@ const LeccionQuizScreen = ({ navigation, route }) => {
       isCorrect,
       stats: { 
         aciertos: isCorrect ? 1 : 0, 
-        rapidez: `${elapsedTime}s`, // ✅ TIEMPO REAL
+        rapidez: `${elapsedTime}s`,
         errores: isCorrect ? 0 : 1 
       },
     });
   };
 
   const handleTimeUp = () => {
-    // Si se acaba el tiempo sin responder
     if (!showFeedback) {
       const finalTime = Math.floor((Date.now() - startTime.current) / 1000);
       setElapsedTime(finalTime);
@@ -108,14 +119,27 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   };
 
   const getButtonTextStyle = (optionId) => {
+    // ✅ MISMO TAMAÑO siempre (16px, bold)
+    const baseStyle = {
+      fontSize: 16,
+      fontWeight: '600',
+    };
+    
     if (showFeedback) {
       const option = quizData.options.find(opt => opt.id === optionId);
       if (option?.isCorrect || selectedAnswer === optionId) {
-        return styles.optionTextLight;
+        return { ...baseStyle, color: '#FFFFFF' };
       }
+      return { ...baseStyle, color: '#333' };
     }
-    return selectedAnswer === optionId ? styles.optionTextLight : styles.optionText;
+    
+    // Antes de verificar: mismo tamaño, solo cambia color
+    return selectedAnswer === optionId 
+      ? { ...baseStyle, color: '#FFFFFF' }
+      : { ...baseStyle, color: '#333' };
   };
+
+  const isCorrect = showFeedback && quizData.options.find(opt => opt.id === selectedAnswer)?.isCorrect;
 
   return (
     <LinearGradient colors={['#D5E6FF', '#E6F7FF']} style={styles.gradient}>
@@ -132,7 +156,7 @@ const LeccionQuizScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* ⏱️ TEMPORIZADOR - Solo en Quiz */}
+          {/* ⏱️ TEMPORIZADOR */}
           <TimerProgressBar 
             duration={30} 
             onComplete={handleTimeUp}
@@ -145,33 +169,60 @@ const LeccionQuizScreen = ({ navigation, route }) => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* Robot con pregunta */}
-          <View style={styles.questionContainer}>
-            <Image source={robot} style={styles.robotImage} />
+          {/* Pregunta con robot-9 a la IZQUIERDA */}
+          <View style={styles.questionRow}>
+            <Image source={robotQuestion} style={styles.robotQuestionImage} />
             <View style={styles.speechBubble}>
               <Text style={styles.questionText}>{quizData.question}</Text>
             </View>
           </View>
 
-          {/* Opciones */}
-          <View style={styles.optionsContainer}>
-            {quizData.options.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={getButtonStyle(option.id)}
-                onPress={() => handleSelectAnswer(option.id)}
-                disabled={showFeedback}
-                activeOpacity={0.7}
-              >
-                <Text style={getButtonTextStyle(option.id)}>{option.text}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Opciones con robot-10 a la DERECHA */}
+          <View style={styles.answersSection}>
+            <View style={styles.optionsContainer}>
+              {quizData.options.map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={getButtonStyle(option.id)}
+                  onPress={() => handleSelectAnswer(option.id)}
+                  disabled={showFeedback}
+                  activeOpacity={0.7}
+                >
+                  <Text style={getButtonTextStyle(option.id)}>{option.text}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {!showFeedback ? (
+              <Image source={robotAnswer} style={styles.robotAnswerImage} />
+            ) : (
+              <Image source={robotFeedback} style={styles.robotFeedbackImage} />
+            )}
           </View>
 
-          {/* Feedback con robot azul */}
+          {/* Feedback */}
           {showFeedback && (
-            <View style={styles.feedbackContainer}>
-              <Image source={robotBlue} style={styles.feedbackRobot} />
+            <View style={[
+              styles.feedbackBubble, 
+              isCorrect ? styles.feedbackBubbleCorrect : styles.feedbackBubbleIncorrect
+            ]}>
+              <View style={styles.feedbackHeader}>
+                <Ionicons 
+                  name={isCorrect ? "checkmark-circle" : "close-circle"} 
+                  size={24} 
+                  color={isCorrect ? "#4CAF50" : "#FF6B6B"} 
+                />
+                <Text style={[
+                  styles.feedbackTitle,
+                  isCorrect ? styles.feedbackTitleCorrect : styles.feedbackTitleIncorrect
+                ]}>
+                  {isCorrect ? "Respuesta correcta" : "Respuesta incorrecta"}
+                </Text>
+              </View>
+              
+              <Text style={styles.feedbackExplanation}>
+                {isCorrect ? quizData.correctExplanation : quizData.incorrectExplanation}
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -234,24 +285,26 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 20,
   },
-  questionContainer: {
-    alignItems: 'center',
+  // ✅ Pregunta con robot a la IZQUIERDA
+  questionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 30,
   },
-  robotImage: {
-    width: 120,
-    height: 120,
+  robotQuestionImage: {
+    width: 100,  // ✅ Más grande (antes 80)
+    height: 100,
     resizeMode: 'contain',
-    marginBottom: -10,
+    marginRight: 10,
   },
   speechBubble: {
+    flex: 1,
     backgroundColor: '#FFC8F4',
     borderRadius: 20,
     padding: 20,
-    maxWidth: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -262,19 +315,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     fontWeight: '600',
-    textAlign: 'center',
     lineHeight: 24,
   },
+  // ✅ Opciones con robot a la DERECHA
+  answersSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   optionsContainer: {
-    gap: 15,
-    marginBottom: 30,
+    flex: 1,
+    gap: 12,
+    marginRight: 10,
   },
   optionButton: {
     backgroundColor: '#B0D4FF',
     borderRadius: 16,
-    paddingVertical: 18,
+    paddingVertical: 16, // ✅ Padding fijo
     paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 55, // ✅ Altura mínima fija
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -285,6 +346,7 @@ const styles = StyleSheet.create({
   optionButtonDisabled: {
     opacity: 0.5,
   },
+  // ✅ Estilos de texto simplificados (ya no se usan directamente)
   optionText: {
     fontSize: 16,
     fontWeight: '600',
@@ -303,14 +365,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B6B',
     borderColor: '#E74C3C',
   },
-  feedbackContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  feedbackRobot: {
-    width: 180,
-    height: 180,
+  robotAnswerImage: {
+    width: 120,  // ✅ Más grande (antes 90)
+    height: 120,
     resizeMode: 'contain',
+  },
+  robotFeedbackImage: {
+    width: 120,  // ✅ Más grande (antes 90)
+    height: 120,
+    resizeMode: 'contain',
+  },
+  feedbackBubble: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 10,
+  },
+  feedbackBubbleCorrect: {
+    backgroundColor: '#E8F5E9',
+  },
+  feedbackBubbleIncorrect: {
+    backgroundColor: '#FFEBEE',
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  feedbackTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  feedbackTitleCorrect: {
+    color: '#4CAF50',
+  },
+  feedbackTitleIncorrect: {
+    color: '#FF6B6B',
+  },
+  feedbackExplanation: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 22,
   },
   actionContainer: {
     paddingHorizontal: 20,
