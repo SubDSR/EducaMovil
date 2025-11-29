@@ -105,10 +105,10 @@ const TiposDeDatosScreen = ({ navigation }) => {
   ];
 
   const handleLevelPress = (lesson) => {
-    if (lesson.status === 'current') {
+    // Mostrar burbuja para niveles desbloqueados y actuales
+    if (lesson.status === 'current' || lesson.status === 'unlocked') {
+      // Toggle: si es el mismo nivel, cerrar burbuja; si es otro, mostrar nueva burbuja
       setSelectedLevel(selectedLevel?.id === lesson.id ? null : lesson);
-    } else if (lesson.status === 'unlocked') {
-      startLesson(lesson);
     }
   };
 
@@ -121,9 +121,45 @@ const TiposDeDatosScreen = ({ navigation }) => {
   };
 
   const getBubblePosition = (levelPosition) => {
+    const BUBBLE_WIDTH = 280;
+    const BUBBLE_HEIGHT = 140;
+    const HEADER_HEIGHT = 130;
+    const SCREEN_WIDTH = 360;
+    const MARGIN = 20;
+    const LEVEL_WIDTH = 80;
+    
+    // Por defecto, centrar la burbuja respecto al botón
+    let left = levelPosition.left + (LEVEL_WIDTH / 2) - (BUBBLE_WIDTH / 2);
+    let top = levelPosition.top - 120;
+    let arrowPosition = 'top';
+    
+    // Guardar la posición original antes de ajustes (para calcular la flecha)
+    const originalLeft = left;
+    
+    // 1. Ajustar horizontalmente para no salirse de la pantalla
+    if (left < MARGIN) {
+      left = MARGIN;
+    } else if (left + BUBBLE_WIDTH > SCREEN_WIDTH - MARGIN) {
+      left = SCREEN_WIDTH - BUBBLE_WIDTH - MARGIN;
+    }
+    
+    // 2. Calcular posición de la flecha
+    // La flecha debe apuntar al centro del botón
+    const buttonCenterX = levelPosition.left + (LEVEL_WIDTH / 2);
+    const bubbleCenterX = left + (BUBBLE_WIDTH / 2);
+    const arrowOffset = buttonCenterX - bubbleCenterX;
+    
+    // 3. Verificar si la burbuja se solapa con el header
+    if (top < HEADER_HEIGHT) {
+      arrowPosition = 'bottom';
+      top = levelPosition.top + 90;
+    }
+    
     return {
-      left: levelPosition.left - 100,
-      top: levelPosition.top - 120,
+      left,
+      top,
+      arrowPosition,
+      arrowOffset,
     };
   };
 
@@ -160,14 +196,22 @@ const TiposDeDatosScreen = ({ navigation }) => {
         <Image source={robot8} style={[styles.robot, { left: 200, top: 1630 }]} />
 
         {/* Burbuja de lección */}
-        {selectedLevel && (
-          <LessonBubble
-            title={selectedLevel.title}
-            lessonNumber={selectedLevel.id}
-            onStart={() => startLesson(selectedLevel)}
-            style={getBubblePosition(selectedLevel.position)}
-          />
-        )}
+        {selectedLevel && (() => {
+          const bubblePos = getBubblePosition(selectedLevel.position);
+          return (
+            <LessonBubble
+              title={selectedLevel.title}
+              lessonNumber={selectedLevel.id}
+              onStart={() => startLesson(selectedLevel)}
+              style={{
+                left: bubblePos.left,
+                top: bubblePos.top,
+              }}
+              arrowPosition={bubblePos.arrowPosition}
+              arrowOffset={bubblePos.arrowOffset}
+            />
+          );
+        })()}
 
         {/* Niveles del camino de aprendizaje */}
         {lessons.map((lesson) => (
