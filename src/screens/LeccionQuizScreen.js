@@ -1,3 +1,4 @@
+// src/screens/LeccionQuizScreen.js - CON BLOQUEO DE BOTÓN ATRÁS
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -7,6 +8,8 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +43,40 @@ const LeccionQuizScreen = ({ navigation, route }) => {
         swipeEnabled: false,
       });
     }
+  }, [navigation]);
+
+  // 🚫 BLOQUEAR BOTÓN DE RETROCESO DE ANDROID - REGRESAR A TIPOSDEDATOS
+  useEffect(() => {
+    const backAction = () => {
+      // Mostrar alerta de confirmación
+      Alert.alert(
+        "¿Seguro que quieres salir?",
+        "No se guardará tu progreso.",
+        [
+          {
+            text: "Cancelar",
+            onPress: () => null,
+            style: "cancel"
+          },
+          { 
+            text: "Salir", 
+            onPress: () => {
+              // ✅ Navegar a TiposDeDatos
+              navigation.navigate('TiposDeDatos');
+            },
+            style: "destructive"
+          }
+        ]
+      );
+      return true; // ✅ Bloquea el comportamiento por defecto
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // ✅ Limpiar al desmontar
   }, [navigation]);
 
   // Datos del quiz
@@ -104,6 +141,27 @@ const LeccionQuizScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleClose = () => {
+    Alert.alert(
+      "¿Seguro que quieres salir?",
+      "No se guardará tu progreso.",
+      [
+        {
+          text: "Cancelar",
+          onPress: () => null,
+          style: "cancel"
+        },
+        { 
+          text: "Salir", 
+          onPress: () => {
+            navigation.navigate('TiposDeDatos');
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
   const getButtonStyle = (optionId) => {
     if (!showFeedback) {
       return [
@@ -150,7 +208,7 @@ const LeccionQuizScreen = ({ navigation, route }) => {
         {/* Header con temporizador */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={28} color="#52328C" />
             </TouchableOpacity>
             <View style={styles.titleContainer}>
@@ -298,7 +356,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   robotQuestionImage: {
-    width: 130,  // ✅ Más grande (antes 80)
+    width: 130,
     height: 130,
     resizeMode: 'contain',
     marginRight: -30,
@@ -332,15 +390,15 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     backgroundColor: '#B0D4FF',
-    borderRadius: 16,  // Asegura que todos los botones tengan bordes redondeados
-    paddingVertical: 16, // Padding fijo
+    borderRadius: 16,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 55, // Altura mínima fija
+    minHeight: 55,
     borderWidth: 2,
     borderColor: 'transparent',
-    width: '100%',  // Asegura que el botón ocupe todo el ancho disponible
+    width: '100%',
   },
   optionButtonSelected: {
     backgroundColor: '#2B5A9E',
@@ -349,14 +407,22 @@ const styles = StyleSheet.create({
   optionButtonDisabled: {
     opacity: 0.5,
   },
+  correctAnswer: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#45A049',
+  },
+  incorrectAnswer: {
+    backgroundColor: '#FF6B6B',
+    borderColor: '#E55A5A',
+  },
   robotAnswerImage: {
-    width: 150,  // ✅ Más grande (antes 90)
+    width: 150,
     height: 150,
     resizeMode: 'contain',
     marginLeft: -30,
   },
   robotFeedbackImage: {
-    width: 150,  // ✅ Más grande (antes 90)
+    width: 150,
     height: 150,
     resizeMode: 'contain',
     marginLeft: -30,
@@ -420,18 +486,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  nextButton: {
-    backgroundColor: '#7C3FE0',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  nextButtonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    width: '100%',
+  },
+  nextButtonImage: {
+    width: 70,
+    height: 70,
+    resizeMode: 'contain',
   },
 });
 

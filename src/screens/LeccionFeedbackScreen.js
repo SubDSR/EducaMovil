@@ -63,7 +63,7 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
               // Resetear navegación para prevenir volver atrás
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Cursos' }],
+                routes: [{ name: 'TiposDeDatos' }],
               });
             },
             style: "destructive"

@@ -1,4 +1,4 @@
-// src/screens/TiposDeDatosScreen.js - VERSIÓN FINAL CON TABS GARANTIZADOS
+// src/screens/TiposDeDatosScreen.js - VERSIÓN CORREGIDA CON TABS CONSISTENTES
 import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -30,17 +30,16 @@ const nivelActualImage = require('../../assets/img/nivel-actual.png');
 const TiposDeDatosScreen = ({ navigation }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
 
-  // ✅ FUNCIÓN PARA MOSTRAR TABS
+  // ✅ FUNCIÓN PARA MOSTRAR TABS (con los mismos valores de App.js)
   const showTabs = () => {
     const parent = navigation.getParent();
     if (parent) {
       parent.setOptions({
         tabBarStyle: {
-          display: 'flex',
           backgroundColor: '#52328C',
-          height: Platform.OS === 'android' ? 70 : 80,
-          paddingBottom: Platform.OS === 'android' ? 10 : 20,
-          paddingTop: 10,
+          height: Platform.OS === 'android' ? 90 : 100,
+          paddingBottom: Platform.OS === 'android' ? 30 : 40,
+          paddingTop: Platform.OS === 'android' ? 5 : 15,
           justifyContent: 'center',
         },
         swipeEnabled: true,

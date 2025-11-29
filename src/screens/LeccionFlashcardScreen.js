@@ -1,5 +1,5 @@
-// src/screens/LeccionFlashcardScreen.js - DISEÑO CORREGIDO
-import React, { useState, useLayoutEffect } from 'react';
+// src/screens/LeccionFlashcardScreen.js - CON REGRESO A TIPOSDEDATOS
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,22 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
         swipeEnabled: false,
       });
     }
+  }, [navigation]);
+
+  // 🚫 BLOQUEAR BOTÓN DE RETROCESO DE ANDROID - REGRESAR A TIPOSDEDATOS
+  useEffect(() => {
+    const backAction = () => {
+      // Regresar directamente a TiposDeDatos sin mensaje
+      navigation.navigate('TiposDeDatos');
+      return true; // ✅ Bloquea el comportamiento por defecto
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // ✅ Limpiar al desmontar
   }, [navigation]);
 
   // Datos de las flashcards
@@ -80,7 +97,7 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   };
 
   const handleClose = () => {
-    navigation.goBack();
+    navigation.navigate('TiposDeDatos');
   };
 
   return (
@@ -274,11 +291,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nextButtonContainer: {
-    justifyContent: 'center',  // Centra verticalmente
-    alignItems: 'center',      // Centra horizontalmente
-    width: '100%',             // Asegura que ocupe todo el ancho disponible
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
-
   nextButtonImage: {
     width: 70,
     height: 70,
