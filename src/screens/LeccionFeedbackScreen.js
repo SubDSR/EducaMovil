@@ -1,4 +1,4 @@
-// src/screens/LeccionFeedbackScreen.js - CON BLOQUEO DE BOTÓN ATRÁS
+// src/screens/LeccionFeedbackScreen.js - VERSIÓN FINAL INTEGRADA
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -11,6 +11,7 @@ import {
   Dimensions,
   BackHandler,
   Alert,
+  AccessibilityInfo,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,18 +23,49 @@ const { width, height } = Dimensions.get('window');
 const LeccionFeedbackScreen = ({ navigation, route }) => {
   const { isCorrect = true, stats = {}, lessonTitle = 'Tipos de datos' } = route.params || {};
   
-  const { aciertos = 1, rapidez = '15s', errores = 0 } = stats;
+  // Extraemos estadísticas
+  const { aciertos = 1, rapidez = '0s', errores = 0 } = stats;
   const xpEarned = 50;
 
   // 👤 Estados para información del usuario
   const [userInfo, setUserInfo] = useState(null);
   const [email, setEmail] = useState('');
   const [userName, setUserName] = useState('Usuario');
+  
+  // 🔊 Estado para accesibilidad
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
 
   // Animación flotante del robot
   const floatAnim = useRef(new Animated.Value(0)).current;
 
-  // ❌ OCULTAR TABS al entrar a esta pantalla
+  // 1. DETECCIÓN DE TALKBACK
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+    
+    // Escuchar cambios por si el usuario activa/desactiva TalkBack en esta pantalla
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged', 
+      setIsScreenReaderEnabled
+    );
+    return () => subscription.remove();
+  }, []);
+
+  // 2. GENERACIÓN DEL MENSAJE DE LECTURA AUTOMÁTICA
+  // Construimos el mensaje aquí para usarlo tanto en el Overlay como en la lógica visual si fuera necesario
+  const getAccessibilityMessage = () => {
+    const saludo = isCorrect ? `¡Felicidades ${userName}!` : `Has completado la lección, ${userName}.`;
+    const resumen = `Obtuviste ${aciertos} aciertos, con una rapidez de ${rapidez}, y ${errores} errores.`;
+    const experiencia = `Ganaste ${xpEarned} puntos de experiencia.`;
+    const instruccion = "Toca dos veces en cualquier parte de la pantalla para continuar.";
+    
+    return `${saludo} ${resumen} ${experiencia} ${instruccion}`;
+  };
+
+  // ❌ OCULTAR TABS
   useLayoutEffect(() => {
     const parent = navigation.getParent();
     if (parent) {
@@ -44,44 +76,34 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
     }
   }, [navigation]);
 
-  // 🚫 BLOQUEAR BOTÓN DE RETROCESO DE ANDROID
+  // 🚫 BLOQUEAR BOTÓN ATRÁS
   useEffect(() => {
     const backAction = () => {
-      // Mostrar alerta en lugar de permitir retroceso
+      // Si TalkBack está activo, el botón atrás funciona como "Continuar" para no atrapar al usuario
+      if (isScreenReaderEnabled) {
+        handleContinue();
+        return true;
+      }
+      
       Alert.alert(
-        "¿Seguro que quieres salir?",
-        "Perderás tu progreso si regresas ahora.",
+        "¿Salir?",
+        "Regresarás al menú principal.",
         [
-          {
-            text: "Cancelar",
-            onPress: () => null,
-            style: "cancel"
-          },
+          { text: "Cancelar", style: "cancel" },
           { 
             text: "Salir", 
-            onPress: () => {
-              // Resetear navegación para prevenir volver atrás
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'TiposDeDatos' }],
-              });
-            },
-            style: "destructive"
+            onPress: () => navigation.navigate('TiposDeDatos'),
+            style: "destructive" 
           }
         ]
       );
-      return true; // ✅ Bloquea el comportamiento por defecto
+      return true;
     };
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => backHandler.remove();
+  }, [navigation, isScreenReaderEnabled]);
 
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
-    return () => backHandler.remove(); // ✅ Limpiar al desmontar
-  }, [navigation]);
-
-  // 🔍 Cargar información del usuario al montar el componente
+  // 🔍 Cargar info usuario
   useEffect(() => {
     loadUserInfo();
   }, []);
@@ -89,20 +111,16 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
   const loadUserInfo = async () => {
     try {
       const userData = await AsyncStorage.getItem('@user');
-      
       if (userData) {
         const user = JSON.parse(userData);
         setUserInfo(user);
         setEmail(user.email);
-        
-        const name = getUserData(user.email, user);
-        setUserName(name);
+        setUserName(getUserData(user.email, user));
       } else {
         const savedEmail = await AsyncStorage.getItem('@user_email');
         if (savedEmail) {
           setEmail(savedEmail);
-          const name = getUserData(savedEmail, null);
-          setUserName(name);
+          setUserName(getUserData(savedEmail, null));
         }
       }
     } catch (error) {
@@ -111,92 +129,70 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
   };
 
   const getUserData = (userEmail, userInfoData) => {
-    if (!userEmail || !userEmail.includes('@')) {
-      return 'Usuario';
-    }
-    
-    // Si tenemos información de Google (nombre completo)
-    if (userInfoData?.name) {
-      return userInfoData.name;
-    }
-    
-    // Lógica para el nombre de Google o del correo institucional
-    if (userEmail.includes('@gmail.com')) {
-      const namePart = userEmail.split('@')[0];
-      const names = namePart.split('.');
-      const firstName = names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : '';
-      const lastName = names.length > 1 ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : '';
-      return `${firstName} ${lastName}`.trim() || 'Usuario';
-    } else {
-      // Asumimos que es @unmsm.edu.pe
-      const namePart = userEmail.split('@')[0];
-      const names = namePart.split('.');
-      const firstName = names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : '';
-      const lastName = names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : '';
-      return `${firstName} ${lastName}`.trim() || 'Usuario';
-    }
+    if (userInfoData?.name) return userInfoData.name;
+    if (!userEmail || !userEmail.includes('@')) return 'Usuario';
+    const namePart = userEmail.split('@')[0];
+    const names = namePart.split('.');
+    const firstName = names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : '';
+    return firstName || 'Usuario';
   };
 
+  // Animación Robot
   useEffect(() => {
-    // Animación de flotación infinita
     Animated.loop(
       Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: -15,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
+        Animated.timing(floatAnim, { toValue: -15, duration: 1500, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
       ])
     ).start();
   }, [floatAnim]);
 
   const handleContinue = () => {
-    // ✅ Navegar a TiposDeDatos (TiposDeDatos se encargará de ocultar tabs)
+    if (!isScreenReaderEnabled) {
+        // Solo anunciamos si NO hay TalkBack activo (para feedback sonoro en modo normal si se deseara)
+        // Ojo: Si TalkBack está activo, no anunciamos nada al salir para no cortar el flujo del menú siguiente.
+    }
     navigation.navigate('TiposDeDatos');
   };
 
   return (
     <View style={styles.container}>
-      {/* Fondo de estrellas */}
+      {/* Fondo decorativo */}
       <Image 
         source={fondoEstrellas} 
-        style={styles.backgroundStars}
-        resizeMode="cover"
+        style={styles.backgroundStars} 
+        resizeMode="cover" 
+        // Ocultamos el fondo a la accesibilidad siempre
+        importantForAccessibility="no-hide-descendants" 
       />
 
-      {/* Contenido principal */}
-      <SafeAreaView style={styles.safeArea}>
+      {/* CONTENIDO VISUAL 
+         Si TalkBack está activado, ocultamos TODO este bloque del lector ('no-hide-descendants').
+         ¿Por qué? Porque la Capa Mágica (Overlay) se encargará de leer todo.
+         Esto evita que el lector lea primero la capa mágica y luego intente leer los textos de abajo duplicados.
+      */}
+      <SafeAreaView 
+        style={styles.safeArea}
+        importantForAccessibility={isScreenReaderEnabled ? "no-hide-descendants" : "yes"}
+      >
         <View style={styles.content}>
-          {/* 👤 Nombre del usuario dinámico */}
           <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.rank}>Rango Bronce</Text>
 
-          {/* Robot con animación flotante */}
           <View style={styles.robotContainer}>
             <Animated.Image
               source={robotMeme}
-              style={[
-                styles.robotImage,
-                {
-                  transform: [{ translateY: floatAnim }],
-                },
-              ]}
+              style={[styles.robotImage, { transform: [{ translateY: floatAnim }] }]}
               resizeMode="contain"
             />
           </View>
 
-          {/* Mensaje de XP */}
           <View style={styles.xpContainer}>
             <Text style={styles.congratsText}>¡Felicidades! Has conseguido</Text>
             <Text style={styles.xpText}>+ {xpEarned} xp</Text>
           </View>
 
-          {/* Estadísticas */}
+          {/* Estadísticas Visuales */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{aciertos}</Text>
@@ -214,12 +210,38 @@ const LeccionFeedbackScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Botón continuar */}
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueButtonText}>Continuar</Text>
-          </TouchableOpacity>
+          {/* Botón visual (solo visible si TalkBack está APAGADO, ya que con TalkBack usamos el Overlay) */}
+          {!isScreenReaderEnabled && (
+            <TouchableOpacity 
+              style={styles.continueButton} 
+              onPress={handleContinue}
+            >
+              <Text style={styles.continueButtonText}>Continuar</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
+
+      {/* ⭐⭐ CAPA MÁGICA DE ACCESIBILIDAD (OVERLAY) ⭐⭐
+         Se activa SOLO si TalkBack está ON.
+         1. Cubre toda la pantalla.
+         2. Contiene TODO el texto en su `accessibilityLabel`.
+         3. Al cargar la pantalla, TalkBack enfoca esto automáticamente y lee todo el mensaje.
+         4. Al tocar dos veces, ejecuta `handleContinue`.
+      */}
+      {isScreenReaderEnabled && (
+        <TouchableOpacity
+          style={styles.accessibilityOverlay}
+          onPress={handleContinue}
+          activeOpacity={1} // Sin feedback visual
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={getAccessibilityMessage()} // <--- AQUÍ ESTÁ LA LECTURA AUTOMÁTICA
+          accessibilityViewIsModal={true} // Atrapa el foco aquí
+        >
+          {/* Capa invisible */}
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -228,6 +250,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  // Estilo del Overlay Mágico
+  accessibilityOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999, // Asegura estar encima de todo
+    backgroundColor: 'transparent', 
   },
   backgroundStars: {
     position: 'absolute',

@@ -1,5 +1,5 @@
 // src/screens/WelcomeScreen.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,8 +7,11 @@ import {
   Image,
   TouchableOpacity,
   ImageBackground,
-  SafeAreaView,
+  AccessibilityInfo,
 } from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useFonts, Oxanium_600SemiBold } from '@expo-google-fonts/oxanium';
 import { Roboto_500Medium } from '@expo-google-fonts/roboto';
 
@@ -20,7 +23,6 @@ import nextButton from '../../assets/img/perfil-button.png';
 export default function WelcomeScreen({ route, navigation }) {
   const { email } = route.params;
 
-  // ... (la función getUserData y el resto no cambian)
   const getUserData = (userEmail) => {
     if (!userEmail || !userEmail.includes('@')) {
       return { firstName: 'Usuario', lastName: '' };
@@ -28,8 +30,13 @@ export default function WelcomeScreen({ route, navigation }) {
     const namePart = userEmail.split('@')[0];
     const names = namePart.split('.');
 
-    const firstName = names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : 'Usuario';
-    const lastName = names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : '';
+    const firstName = names[0]
+      ? names[0].charAt(0).toUpperCase() + names[0].slice(1)
+      : 'Usuario';
+
+    const lastName = names[1]
+      ? names[1].charAt(0).toUpperCase() + names[1].slice(1)
+      : '';
 
     return { firstName, lastName };
   };
@@ -41,27 +48,80 @@ export default function WelcomeScreen({ route, navigation }) {
     Roboto_500Medium,
   });
 
+  // --- ACCESIBILIDAD ---
+  const [screenReaderOn, setScreenReaderOn] = useState(false);
+
+  // Este hook SIEMPRE se llama (para no romper React)
+  useEffect(() => {
+    AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
+      setScreenReaderOn(enabled);
+    });
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'change',
+      (enabled) => {
+        setScreenReaderOn(enabled);
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  // Mensaje de bienvenida por VoiceOver / TalkBack
+  useEffect(() => {
+    if (screenReaderOn) {
+      const mensaje = `Hola ${firstName}. Bienvenido a tu perfil.`;
+      AccessibilityInfo.announceForAccessibility(mensaje);
+    }
+  }, [screenReaderOn]);
+
   if (!fontsLoaded) {
     return null;
   }
-  
+
   return (
     <ImageBackground source={backgroundImage} style={styles.background}>
       <SafeAreaView style={styles.container}>
-        <Text style={styles.greeting}>¡Hola {firstName}!</Text>
-        <Image source={profileImage} style={styles.profileImage} />
-        <Text style={styles.fullName}>{firstName} {lastName}</Text>
+        <Text
+          style={styles.greeting}
+          accessibilityRole="header"
+          accessible={true}
+        >
+          ¡Hola {firstName}!
+        </Text>
+
+        <Image
+          source={profileImage}
+          style={styles.profileImage}
+          accessible={true}
+          accessibilityLabel={`Foto de perfil de ${firstName} ${lastName}`}
+        />
+
+        <Text
+          style={styles.fullName}
+          accessible={true}
+          accessibilityLabel={`Nombre completo: ${firstName} ${lastName}`}
+        >
+          {firstName} {lastName}
+        </Text>
 
         <TouchableOpacity
           style={styles.nextButton}
-          // --- CAMBIO IMPORTANTE AQUÍ ---
-          // Reiniciamos la navegación y pasamos el email a la app principal
-          onPress={() => navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainApp', params: { userEmail: email } }],
-          })}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainApp', params: { userEmail: email } }],
+            })
+          }
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Continuar al menú principal"
         >
-          <Image source={nextButton} style={styles.nextButtonIcon} />
+          <Image
+            source={nextButton}
+            style={styles.nextButtonIcon}
+            accessible={false}
+          />
         </TouchableOpacity>
       </SafeAreaView>
     </ImageBackground>
@@ -81,7 +141,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontFamily: 'Oxanium_600SemiBold',
     fontSize: 38,
-    fontWeight: '600',
     marginBottom: 60,
     color: '#333',
   },
@@ -93,7 +152,6 @@ const styles = StyleSheet.create({
   fullName: {
     fontFamily: 'Roboto_500Medium',
     fontSize: 28,
-    fontWeight: '500',
     marginTop: 30,
     color: '#333',
   },

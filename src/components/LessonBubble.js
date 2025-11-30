@@ -1,4 +1,3 @@
-// src/components/LessonBubble.js - CON FLECHA ALINEADA AL BOTÓN
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 
@@ -7,15 +6,21 @@ const LessonBubble = ({
   lessonNumber, 
   onStart, 
   style,
-  arrowPosition = 'top', // 'top' o 'bottom'
-  arrowOffset = 0 // Desplazamiento horizontal de la flecha desde el centro
+  arrowPosition = 'top', 
+  arrowOffset = 0,
+  // Nueva prop: permite ocultar este componente del lector de pantalla
+  // cuando usamos el overlay gigante en la pantalla principal.
+  isAccessibilityHidden = false 
 }) => {
-  // Calcular la posición de la flecha (centro de la burbuja + offset)
-  const arrowLeft = 140 + arrowOffset - 15; // 140 = mitad de 280px, -15 = mitad del ancho de la flecha
+  const arrowLeft = 140 + arrowOffset - 15;
   
   return (
-    <View style={[styles.container, style]}>
-      {/* Flecha superior (cuando la burbuja está DEBAJO del botón) */}
+    <View 
+      style={[styles.container, style]}
+      // Importante: Si el overlay gigante está activo, esto se vuelve invisible para TalkBack
+      importantForAccessibility={isAccessibilityHidden ? 'no-hide-descendants' : 'yes'}
+      accessible={!isAccessibilityHidden}
+    >
       {arrowPosition === 'bottom' && (
         <View style={[styles.arrowTop, { left: arrowLeft }]} />
       )}
@@ -24,12 +29,16 @@ const LessonBubble = ({
         <Text style={styles.title}>
           Lección {lessonNumber} - {title}
         </Text>
-        <TouchableOpacity style={styles.button} onPress={onStart}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={onStart}
+          accessible={!isAccessibilityHidden} // Botón accesible solo si no hay overlay
+          accessibilityLabel="Comenzar lección"
+        >
           <Text style={styles.buttonText}>Comenzar</Text>
         </TouchableOpacity>
       </View>
       
-      {/* Flecha inferior (cuando la burbuja está ENCIMA del botón) */}
       {arrowPosition === 'top' && (
         <View style={[styles.arrowBottom, { left: arrowLeft }]} />
       )}
@@ -40,7 +49,7 @@ const LessonBubble = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    width: 280, // Ancho fijo para el contenedor
+    width: 280,
     zIndex: 10,
   },
   bubble: {
@@ -91,7 +100,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Flecha que apunta HACIA ABAJO (burbuja encima del botón)
   arrowBottom: {
     position: 'absolute',
     bottom: -20,
@@ -105,9 +113,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: '#A07CBC',
-    // left se aplicará dinámicamente
   },
-  // Flecha que apunta HACIA ARRIBA (burbuja debajo del botón)
   arrowTop: {
     position: 'absolute',
     top: -20,
@@ -121,7 +127,6 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderBottomColor: '#A07CBC',
-    // left se aplicará dinámicamente
   },
 });
 

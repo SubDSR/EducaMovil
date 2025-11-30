@@ -1,4 +1,4 @@
-// src/screens/LeccionFlashcardScreen.js - CON REGRESO A TIPOSDEDATOS
+// src/screens/LeccionFlashcardScreen.js - MEJORADO ACCESIBILIDAD
 import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -9,6 +9,8 @@ import {
   Image,
   ScrollView,
   BackHandler,
+  AccessibilityInfo,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +21,9 @@ const perfilButton = require('../../assets/img/perfil-button.png');
 
 const LeccionFlashcardScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
-  
   const [currentCard, setCurrentCard] = useState(0);
 
-  // ✅ Ocultar tabs al entrar a esta pantalla
+  // Ocultar tabs al entrar
   useLayoutEffect(() => {
     const parent = navigation.getParent();
     if (parent) {
@@ -33,20 +34,14 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
     }
   }, [navigation]);
 
-  // 🚫 BLOQUEAR BOTÓN DE RETROCESO DE ANDROID - REGRESAR A TIPOSDEDATOS
+  // Bloquear botón físico atrás
   useEffect(() => {
     const backAction = () => {
-      // Regresar directamente a TiposDeDatos sin mensaje
       navigation.navigate('TiposDeDatos');
-      return true; // ✅ Bloquea el comportamiento por defecto
+      return true;
     };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
-    return () => backHandler.remove(); // ✅ Limpiar al desmontar
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => backHandler.remove();
   }, [navigation]);
 
   // Datos de las flashcards
@@ -55,33 +50,58 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
       subtitle: 'Introducción',
       content: 'En programación, los tipos de datos definen la clase de información que puede manejar una variable dentro de un programa.',
       examples: [
-        { 
-          label: 'Enteros (int):', 
-          description: 'Números sin decimales, como 5 o -12', 
-          color: '#FFC8F4' // Rosa
-        },
-        { 
-          label: 'Reales (float/double):', 
-          description: 'Números con decimales, como 3.14 o -0.5', 
-          color: '#C8E5FF' // Celeste
-        },
-        { 
-          label: 'Cadenas (string):', 
-          description: 'Texto compuesto por caracteres, como "Hola"', 
-          color: '#E5C8FF' // Morado
-        },
-        { 
-          label: 'Booleanos (bool):', 
-          description: 'Valores lógicos que representan V o F', 
-          color: '#C8FFE5' // Verde
-        },
+        { label: 'Enteros (int):', description: 'Números sin decimales, como 5 o -12', color: '#FFC8F4' },
+        { label: 'Reales (float/double):', description: 'Números con decimales, como 3.14 o -0.5', color: '#C8E5FF' },
+        { label: 'Cadenas (string):', description: 'Texto compuesto por caracteres, como "Hola"', color: '#E5C8FF' },
+        { label: 'Booleanos (bool):', description: 'Valores lógicos que representan verdadero o falso', color: '#C8FFE5' },
       ],
     },
   ];
 
   const currentFlashcard = flashcards[currentCard];
   const progress = (currentCard + 1) / flashcards.length;
+  const isLastCard = currentCard === flashcards.length - 1;
 
+  // 🔊 LÓGICA DE LECTURA INTELIGENTE (Solo si TalkBack está activo)
+  useEffect(() => {
+    const handleAccessibilityAnnouncement = async () => {
+      // 1. Verificamos si el lector de pantalla está activado
+      const isScreenReaderEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+
+      if (isScreenReaderEnabled) {
+        // 2. Construimos el mensaje completo
+        let messageToRead = `Estás en la lección: ${lessonTitle}. ${currentFlashcard.subtitle}. ${currentFlashcard.content}. `;
+
+        // Añadimos los ejemplos si existen
+        if (currentFlashcard.examples && currentFlashcard.examples.length > 0) {
+          messageToRead += "Aquí tienes algunos ejemplos: ";
+          currentFlashcard.examples.forEach((ex) => {
+            // Leemos Label y descripción (ej: "Enteros int: Números sin decimales...")
+            messageToRead += `${ex.label} ${ex.description}. `;
+          });
+        }
+
+        // 3. Añadimos la instrucción sobre el botón final
+        // Modificamos el mensaje dependiendo de si es la última tarjeta o no
+        if (isLastCard) {
+            messageToRead += " Al inicio de la pantalla, en la parte superior derecha, encontrarás un botón para cerrar la lección. Del mismo modo, Al final de la pantalla, en la parte inferior, encontrarás un botón redondo para ir a los ejercicios.";
+        } else {
+            messageToRead += " Al final de la pantalla, encontrarás un botón para ir a la siguiente tarjeta.";
+        }
+
+        // 4. Hacemos el anuncio con un pequeño retraso para asegurar que la navegación terminó
+        setTimeout(() => {
+          AccessibilityInfo.announceForAccessibility(messageToRead);
+        }, 500); 
+      }
+    };
+
+    handleAccessibilityAnnouncement();
+    
+    // Se ejecuta al montar o al cambiar de tarjeta (currentCard)
+  }, [currentCard]);
+
+  // Navegación
   const handleNext = () => {
     if (currentCard < flashcards.length - 1) {
       setCurrentCard(currentCard + 1);
@@ -103,38 +123,58 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   return (
     <LinearGradient colors={['#D5E6FF', '#E6F7FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
+        
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={styles.header}
+          accessible={true}
+          // Simplificamos el label del header porque el useEffect ya está leyendo todo el detalle
+          accessibilityLabel={`Encabezado de lección ${lessonTitle}`}
+        >
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar lección y volver al menú principal"
+            >
               <Ionicons name="close" size={28} color="#52328C" />
             </TouchableOpacity>
+
             <View style={styles.titleContainer}>
               <Text style={styles.headerTitle}>{lessonTitle}</Text>
               <Text style={styles.headerSubtitle}>{currentFlashcard.subtitle}</Text>
             </View>
           </View>
 
-          {/* Barra de progreso */}
           <View style={styles.progressBarContainer}>
             <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
           </View>
         </View>
 
         {/* Contenido */}
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* Card blanca con descripción */}
-          <View style={styles.whiteCard}>
+          <View
+            style={styles.whiteCard}
+            accessible={true}
+            // Mantenemos esto para que si el usuario toca la tarjeta manualmente, la lea de nuevo
+            accessibilityLabel={`Contenido principal: ${currentFlashcard.content}`}
+          >
             <Text style={styles.introText}>{currentFlashcard.content}</Text>
           </View>
 
-          {/* Card blanca con tabla de tipos de datos */}
           <View style={styles.whiteCard}>
             {currentFlashcard.examples.map((example, index) => (
-              <View key={index} style={styles.tableRow}>
+              <View
+                key={index}
+                style={styles.tableRow}
+                accessible={true}
+                accessibilityLabel={`${example.label}. ${example.description}`}
+              >
                 <View style={[styles.labelBox, { backgroundColor: example.color }]}>
                   <Text style={styles.labelText}>{example.label}</Text>
                 </View>
@@ -143,16 +183,27 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
             ))}
           </View>
 
-          {/* Robot azul SIN plataforma */}
           <View style={styles.robotContainer}>
-            <Image source={robot} style={styles.robotImage} />
+            <Image
+              source={robot}
+              style={styles.robotImage}
+              accessible={true}
+              accessibilityLabel="Ilustración de un robot acompañante"
+            />
           </View>
         </ScrollView>
 
         {/* Controles de navegación */}
         <View style={styles.controls}>
+          
           {currentCard > 0 && (
-            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+            <TouchableOpacity
+              style={styles.previousButton}
+              onPress={handlePrevious}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a la tarjeta anterior"
+            >
               <Ionicons name="arrow-back" size={24} color="#7C3FE0" />
               <Text style={styles.previousButtonText}>Anterior</Text>
             </TouchableOpacity>
@@ -160,22 +211,29 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
 
           <View style={styles.controlsSpacer} />
 
-          <TouchableOpacity onPress={handleNext} style={styles.nextButtonContainer}>
+          {/* Siguiente - Botón con imagen perfil-button */}
+          <TouchableOpacity
+            onPress={handleNext}
+            style={styles.nextButtonContainer}
+            accessible={true}
+            accessibilityRole="button"
+            // Etiqueta dinámica: Si es la última tarjeta dice "Ir a ejercicios", si no "Siguiente"
+            accessibilityLabel={isLastCard ? "Ir a los ejercicios" : "Siguiente tarjeta"}
+            accessibilityHint={isLastCard ? "Toca dos veces para comenzar el cuestionario" : "Toca dos veces para ver más contenido"}
+          >
             <Image source={perfilButton} style={styles.nextButtonImage} />
           </TouchableOpacity>
         </View>
+
       </SafeAreaView>
     </LinearGradient>
   );
 };
 
+// ... (El resto de tus estilos styles se mantienen igual)
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  gradient: { flex: 1 },
+  safeArea: { flex: 1 },
   header: {
     backgroundColor: '#987ACC',
     paddingTop: 50,
@@ -187,13 +245,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  closeButton: {
-    padding: 5,
-    marginRight: 15,
-  },
-  titleContainer: {
-    flex: 1,
-  },
+  closeButton: { padding: 5, marginRight: 15 },
+  titleContainer: { flex: 1 },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -237,9 +290,7 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 22,
   },
-  tableRow: {
-    marginBottom: 12,
-  },
+  tableRow: { marginBottom: 12 },
   labelBox: {
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -287,9 +338,7 @@ const styles = StyleSheet.create({
     color: '#7C3FE0',
     fontWeight: '600',
   },
-  controlsSpacer: {
-    flex: 1,
-  },
+  controlsSpacer: { flex: 1 },
   nextButtonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
