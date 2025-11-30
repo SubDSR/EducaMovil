@@ -335,40 +335,217 @@ const LeccionQuizScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safeArea: { flex: 1 },
-  header: { backgroundColor: '#987ACC', paddingTop: 50, paddingBottom: 15, paddingHorizontal: 20 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  closeButton: { padding: 5, marginRight: 15 },
-  titleContainer: { flex: 1 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: 'white' },
-  headerSubtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
-  questionRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 30 },
-  robotQuestionImage: { width: 130, height: 130, resizeMode: 'contain', marginRight: -30 },
-  speechBubble: { flex: 1, backgroundColor: '#FFC8F4', borderRadius: 20, padding: 20, elevation: 3 },
-  questionText: { fontSize: 16, color: '#333', fontWeight: '600', lineHeight: 24 },
-  answersSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  optionsContainer: { flex: 1, gap: 12 },
-  optionButton: { backgroundColor: '#B0D4FF', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', minHeight: 55, borderWidth: 2, borderColor: 'transparent', width: '100%' },
-  optionButtonSelected: { backgroundColor: '#2B5A9E', borderColor: '#1E3E6B' },
-  optionButtonDisabled: { opacity: 0.5 },
-  correctAnswer: { backgroundColor: '#4CAF50', borderColor: '#45A049' },
-  incorrectAnswer: { backgroundColor: '#FF6B6B', borderColor: '#E55A5A' },
-  robotAnswerImage: { width: 150, height: 150, resizeMode: 'contain', marginLeft: -30 },
-  robotFeedbackImage: { width: 150, height: 150, resizeMode: 'contain', marginLeft: -30 },
-  feedbackBubble: { borderRadius: 20, padding: 20, elevation: 3, marginTop: 10 },
-  feedbackBubbleCorrect: { backgroundColor: '#E8F5E9' },
-  feedbackBubbleIncorrect: { backgroundColor: '#FFEBEE' },
-  feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  feedbackTitle: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
-  feedbackTitleCorrect: { color: '#4CAF50' },
-  feedbackTitleIncorrect: { color: '#FF6B6B' },
-  feedbackExplanation: { fontSize: 14, color: '#333', lineHeight: 22 },
-  actionContainer: { paddingHorizontal: 20, paddingVertical: 20, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', alignItems: 'center' },
-  verifyButton: { backgroundColor: '#7C3FE0', borderRadius: 16, paddingVertical: 16, width: '100%', alignItems: 'center' },
-  verifyButtonDisabled: { backgroundColor: '#CCCCCC' },
-  verifyButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  nextButtonContainer: { justifyContent: 'center', alignItems: 'center', width: '100%' },
-  nextButtonImage: { width: 70, height: 70, resizeMode: 'contain' },
+  header: 
+  { 
+    backgroundColor: '#987ACC', 
+    paddingTop: 50, 
+    paddingBottom: 15, 
+    paddingHorizontal: 20 
+  },
+
+  headerTop: 
+  { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 15 
+  },
+
+  closeButton: 
+  { 
+    padding: 5, 
+    marginRight: 15 
+  },
+
+  titleContainer: 
+  { 
+    flex: 1 
+  },
+  headerTitle: 
+  { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    color: 'white' 
+  },
+  headerSubtitle: 
+  { 
+    fontSize: 14, 
+    color: 'rgba(255, 255, 255, 0.8)', 
+    marginTop: 2 
+  },
+  content: 
+  { 
+    paddingHorizontal: 20, 
+    paddingTop: 20, 
+    paddingBottom: 20 
+  },
+  questionRow: 
+  { 
+    flexDirection: 'row', 
+    alignItems: 'flex-start', 
+    marginBottom: 30 
+  },
+  robotQuestionImage: 
+  { 
+    width: 130, 
+    height: 130, 
+    resizeMode: 'contain',  
+  },
+  speechBubble: 
+  { 
+    flex: 1, 
+    backgroundColor: '#FFC8F4', 
+    borderRadius: 20, 
+    borderWidth: 1,
+    borderColor: '#5a5a5aff',
+    padding: 20, 
+    elevation: 3 
+  },
+  questionText: 
+  { 
+    fontSize: 16, 
+    color: '#333', 
+    fontWeight: '600', 
+    lineHeight: 24 
+  },
+  answersSection: 
+  { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  optionsContainer: 
+  { 
+    flex: 1, 
+    gap: 12 
+  },
+  optionButton: 
+  { 
+    backgroundColor: '#B0D4FF', 
+    borderRadius: 16, 
+    paddingVertical: 16, 
+    paddingHorizontal: 20, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    minHeight: 55, 
+    borderWidth: 2,
+    borderColor: '#5a5a5aff',
+    width: '100%' 
+  },
+  optionButtonSelected: 
+  { 
+    backgroundColor: '#2B5A9E', 
+    borderWidth: 2,
+    borderColor: '#1E3E6B' 
+  },
+  optionButtonDisabled: 
+  { 
+    opacity: 0.5 
+  },
+  correctAnswer: 
+  { 
+    backgroundColor: '#4CAF50', 
+    borderColor: '#45A049' 
+  },
+  incorrectAnswer: 
+  { 
+    backgroundColor: '#FF6B6B', 
+    borderColor: '#E55A5A' 
+  },
+  robotAnswerImage: 
+  { 
+    width: 150, 
+    height: 150, 
+    resizeMode: 'contain', 
+  },
+  robotFeedbackImage: 
+  { 
+    width: 150, 
+    height: 150, 
+    resizeMode: 'contain', 
+  },
+  feedbackBubble: 
+  { 
+    borderRadius: 20, 
+    padding: 20, 
+    elevation: 3, 
+    marginTop: 10 
+  },
+  feedbackBubbleCorrect: 
+  { 
+    backgroundColor: '#E8F5E9' ,
+    borderWidth: 1,
+    borderColor: '#5a5a5aff',
+  },
+  feedbackBubbleIncorrect: 
+  { 
+    backgroundColor: '#FFEBEE' ,
+    borderWidth: 1,
+    borderColor: '#5a5a5aff',
+  },
+  feedbackHeader: 
+  { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  feedbackTitle: 
+  { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    marginLeft: 8 
+  },
+  feedbackTitleCorrect: 
+  { 
+    color: '#4CAF50' 
+  },
+  feedbackTitleIncorrect: 
+  { 
+    color: '#FF6B6B' 
+  },
+  feedbackExplanation: 
+  { 
+    fontSize: 14, 
+    color: '#333', 
+    lineHeight: 22 
+  },
+  actionContainer: 
+  { 
+    paddingHorizontal: 20, 
+    paddingVertical: 20, 
+    borderTopWidth: 1, 
+    borderTopColor: 'rgba(0, 0, 0, 0.1)', 
+    alignItems: 'center' 
+  },
+  verifyButton: 
+  { 
+    backgroundColor: '#7C3FE0', 
+    borderRadius: 16, 
+    paddingVertical: 16, 
+    width: '100%', 
+    alignItems: 'center' 
+  },
+  verifyButtonDisabled: 
+  { 
+    backgroundColor: '#CCCCCC' 
+  },
+  verifyButtonText: 
+  { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+  nextButtonContainer: 
+  { 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: '100%' 
+  },
+  nextButtonImage: 
+  { 
+    width: 70, 
+    height: 70, 
+    resizeMode: 'contain' 
+  },
 });
 
 export default LeccionQuizScreen;

@@ -203,7 +203,7 @@ const TiposDeDatosScreen = ({ navigation }) => {
         {/* Robots Decorativos (Silenciados para accesibilidad) */}
         <Image source={robot3} style={[styles.robot, { left: 30, top: 170 }]} accessible={false} />
         <Image source={robot4} style={[styles.robot, { left: 30, top: 1370 }]} accessible={false} />
-        <Image source={robot5} style={[styles.robot, { left: 30, top: 780 }]} accessible={false} />
+        <Image source={robot5} style={[styles.robot, { left: 30, top: 740 }]} accessible={false} />
         <Image source={robot6} style={[styles.robot, { left: 200, top: 450 }]} accessible={false} />
         <Image source={robot7} style={[styles.robot, { left: 200, top: 1080 }]} accessible={false} />
         <Image source={robot8} style={[styles.robot, { left: 200, top: 1630 }]} accessible={false} />

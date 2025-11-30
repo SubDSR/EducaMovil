@@ -113,6 +113,8 @@ const styles = StyleSheet.create({
         padding: 15,
         width: '100%',
         marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#5a5a5aff',
     },
     rachaHeader: {
         flexDirection: 'row',
@@ -130,6 +132,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
         borderRadius: 12,
         paddingVertical: 10,
+        borderWidth: 1,
+        borderColor: '#5a5a5aff',
     },
     diaText: {
         fontWeight: 'bold',
@@ -150,6 +154,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#E0E0E0',
         borderRadius: 6,
         width: '100%',
+        borderWidth: 1,
+        borderColor: '#5a5a5aff',
     },
     xpBarFill: {
         height: '100%',
@@ -180,14 +186,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#B98EFF',
+        backgroundColor: '#81CAFF',
         borderRadius: 12,
         padding: 15,
         width: '100%',
         marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#5a5a5aff',
     },
     priorityMission: {
         backgroundColor: '#81CAFF',
+        borderWidth: 1,
+        borderColor: '#5a5a5aff',
     },
     missionText: {
         color: '#333',

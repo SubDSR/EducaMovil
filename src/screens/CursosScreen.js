@@ -158,6 +158,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 2,
+    borderColor: '#000000ff',
   },
   cursoCardDisabled: {
     opacity: 0.6,
@@ -187,6 +189,7 @@ const styles = StyleSheet.create({
     color: '#555',
     marginBottom: 15,
     lineHeight: 20,
+    paddingRight: 50,
   },
   progressSection: {
     flexDirection: 'row',

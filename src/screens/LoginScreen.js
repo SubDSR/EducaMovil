@@ -167,7 +167,9 @@ export default function LoginScreen({ navigation }) {
               
               <View style={styles.container}>
                 <Text style={styles.title}>EducaMovil</Text>
-                <Text style={styles.stepText}>Bienvenido de vuelta</Text>
+                <Text style={styles.stepText}>Convierte cada línea de código en un paso </Text>
+                <Text style={styles.stepText}>hacia tu futuro. Inspírate, diviértete y</Text>
+                <Text style={styles.stepText}>descubre tu camino</Text>
                 <Image source={robotImage} style={styles.robotImage} />
                 <Text style={styles.registerLabel}>Iniciar Sesión</Text>
 
@@ -285,8 +287,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   robotImage: {
-    width: 120,
-    height: 120,
+    width: 170,
+    height: 170,
     resizeMode: 'contain',
     marginVertical: 15,
   },
@@ -303,7 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F3F3',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#BDBDBD',
+    borderColor: '#5a5a5aff',
     height: 45,
     width: '90%',
     marginVertical: 8,
@@ -334,8 +336,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#cececeff',
     borderRadius: 32,
+    borderWidth: 1,
+    borderColor: '#5a5a5aff',
     paddingHorizontal: 30,
     paddingVertical: 10,
     shadowColor: '#000',

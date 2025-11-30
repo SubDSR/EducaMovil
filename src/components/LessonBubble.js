@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1DBFF',
     borderRadius: 20,
     borderWidth: 3,
-    borderColor: '#A07CBC',
+    borderColor: '#5e2f82ff',
     padding: 20,
     width: 280,
     alignItems: 'center',
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   button: {
-    backgroundColor: '#A07CBC',
-    borderRadius: 20,
+    backgroundColor: '#5e2f82ff',
+    borderRadius: 15,
     paddingVertical: 10,
     paddingHorizontal: 30,
     ...(Platform.OS === 'web' 
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#A07CBC',
+    borderTopColor: '#5e2f82ff',
   },
   arrowTop: {
     position: 'absolute',
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: '#A07CBC',
+    borderBottomColor: '#5e2f82ff',
   },
 });
 
