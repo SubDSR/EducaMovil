@@ -167,9 +167,8 @@ export default function LoginScreen({ navigation }) {
               
               <View style={styles.container}>
                 <Text style={styles.title}>EducaMovil</Text>
-                <Text style={styles.stepText}>Convierte cada línea de código en un paso </Text>
-                <Text style={styles.stepText}>hacia tu futuro. Inspírate, diviértete y</Text>
-                <Text style={styles.stepText}>descubre tu camino</Text>
+                <Text style={styles.stepText}>Convierte cada línea de código en un paso hacia tu futuro. Inspírate, diviértete y descubre tu camino</Text>
+
                 <Image source={robotImage} style={styles.robotImage} />
                 <Text style={styles.registerLabel}>Iniciar Sesión</Text>
 
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   logo: {
     width: 50,
@@ -263,7 +262,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 80,
+    paddingTop: 100,
   },
   loadingContainer: {
     flex: 1,
@@ -282,13 +281,16 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   stepText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#555',
-    marginTop: 5,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    paddingRight:70,
+    paddingLeft: 70,
   },
   robotImage: {
-    width: 170,
-    height: 170,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
     marginVertical: 15,
   },
@@ -296,7 +298,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Oxanium_700Bold',
     fontSize: 30,
     fontWeight: '600',
-    marginVertical: 10,
     color: '#333',
   },
   inputContainer: {

@@ -1,4 +1,4 @@
-// src/screens/LeccionFlashcardScreen.js - MEJORADO ACCESIBILIDAD
+// src/screens/LeccionFlashcardScreen.js - LECTURA AUTOMÁTICA COMPLETA
 import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -22,6 +22,20 @@ const perfilButton = require('../../assets/img/perfil-button.png');
 const LeccionFlashcardScreen = ({ navigation, route }) => {
   const { lessonTitle = 'Tipos de datos', lessonNumber = 1 } = route.params || {};
   const [currentCard, setCurrentCard] = useState(0);
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
+  const [shouldBlockAccessibility, setShouldBlockAccessibility] = useState(true);
+
+  // 1. --- DETECCIÓN DE TALKBACK ---
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+    const subscription = AccessibilityInfo.addEventListener('screenReaderChanged', setIsScreenReaderEnabled);
+    return () => subscription.remove();
+  }, []);
 
   // Ocultar tabs al entrar
   useLayoutEffect(() => {
@@ -62,44 +76,85 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   const progress = (currentCard + 1) / flashcards.length;
   const isLastCard = currentCard === flashcards.length - 1;
 
-  // 🔊 LÓGICA DE LECTURA INTELIGENTE (Solo si TalkBack está activo)
+  // 2. --- LECTURA AUTOMÁTICA COMPLETA AL ENTRAR ---
   useEffect(() => {
-    const handleAccessibilityAnnouncement = async () => {
-      // 1. Verificamos si el lector de pantalla está activado
-      const isScreenReaderEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+    // Solo si TalkBack está activo, no hemos reproducido el intro, y es la primera tarjeta
+    if (isScreenReaderEnabled && !hasPlayedIntro && currentCard === 0) {
+      // Bloqueamos elementos temporalmente
+      setShouldBlockAccessibility(true);
 
-      if (isScreenReaderEnabled) {
-        // 2. Construimos el mensaje completo
-        let messageToRead = `Estás en la lección: ${lessonTitle}. ${currentFlashcard.subtitle}. ${currentFlashcard.content}. `;
-
-        // Añadimos los ejemplos si existen
-        if (currentFlashcard.examples && currentFlashcard.examples.length > 0) {
-          messageToRead += "Aquí tienes algunos ejemplos: ";
-          currentFlashcard.examples.forEach((ex) => {
-            // Leemos Label y descripción (ej: "Enteros int: Números sin decimales...")
-            messageToRead += `${ex.label} ${ex.description}. `;
-          });
-        }
-
-        // 3. Añadimos la instrucción sobre el botón final
-        // Modificamos el mensaje dependiendo de si es la última tarjeta o no
-        if (isLastCard) {
-            messageToRead += " Al inicio de la pantalla, en la parte superior derecha, encontrarás un botón para cerrar la lección. Del mismo modo, Al final de la pantalla, en la parte inferior, encontrarás un botón redondo para ir a los ejercicios.";
-        } else {
-            messageToRead += " Al final de la pantalla, encontrarás un botón para ir a la siguiente tarjeta.";
-        }
-
-        // 4. Hacemos el anuncio con un pequeño retraso para asegurar que la navegación terminó
-        setTimeout(() => {
-          AccessibilityInfo.announceForAccessibility(messageToRead);
-        }, 500); 
+      // Construimos el mensaje COMPLETO
+      let messageToRead = `Estás en la lección: ${lessonTitle}. ${currentFlashcard.subtitle}. `;
+      
+      // Añadimos el contenido principal
+      messageToRead += `${currentFlashcard.content}. `;
+      
+      // Añadimos TODOS los ejemplos
+      if (currentFlashcard.examples && currentFlashcard.examples.length > 0) {
+        messageToRead += "Los tipos de datos son los siguientes: ";
+        currentFlashcard.examples.forEach((ex, index) => {
+          // Leemos cada ejemplo completo
+          messageToRead += `${ex.label} ${ex.description}. `;
+        });
       }
-    };
 
-    handleAccessibilityAnnouncement();
-    
-    // Se ejecuta al montar o al cambiar de tarjeta (currentCard)
-  }, [currentCard]);
+      // Añadimos la información de navegación
+      if (isLastCard) {
+        messageToRead += "Al inicio de la pantalla, en la parte superior derecha, encontrarás un botón para cerrar la lección. Del mismo modo, al final de la pantalla, en la parte inferior, encontrarás un botón redondo para ir a los ejercicios.";
+      } else {
+        messageToRead += "Al final de la pantalla, encontrarás un botón para ir a la siguiente tarjeta.";
+      }
+
+      // Esperamos 1.5 segundos para que TalkBack esté listo
+      setTimeout(() => {
+        AccessibilityInfo.announceForAccessibility(messageToRead);
+        setHasPlayedIntro(true);
+        
+        // Calculamos la duración aproximada del mensaje
+        // Promedio de lectura: 150 palabras por minuto = 2.5 palabras por segundo
+        // Estimamos ~40-50 palabras = ~20 segundos
+        const estimatedDuration = 22000; // 22 segundos
+        
+        // Desbloqueamos después de que termine el mensaje
+        setTimeout(() => {
+          setShouldBlockAccessibility(false);
+        }, estimatedDuration);
+      }, 1500);
+    }
+  }, [isScreenReaderEnabled, hasPlayedIntro, currentCard]);
+
+  // 3. --- LECTURA AL CAMBIAR DE TARJETA ---
+  useEffect(() => {
+    // Si ya pasó el intro inicial y cambiamos de tarjeta
+    if (hasPlayedIntro && currentCard > 0) {
+      // Bloqueamos temporalmente
+      setShouldBlockAccessibility(true);
+
+      let messageToRead = `${currentFlashcard.subtitle}. ${currentFlashcard.content}. `;
+      
+      if (currentFlashcard.examples && currentFlashcard.examples.length > 0) {
+        messageToRead += "Los tipos de datos son los siguientes: ";
+        currentFlashcard.examples.forEach((ex) => {
+          messageToRead += `${ex.label} ${ex.description}. `;
+        });
+      }
+
+      if (isLastCard) {
+        messageToRead += "Al inicio de la pantalla, en la parte superior derecha, encontrarás un botón para cerrar la lección. Del mismo modo, al final de la pantalla, en la parte inferior, encontrarás un botón redondo para ir a los ejercicios.";
+      } else {
+        messageToRead += "Al final de la pantalla, encontrarás un botón para ir a la siguiente tarjeta.";
+      }
+
+      setTimeout(() => {
+        AccessibilityInfo.announceForAccessibility(messageToRead);
+        
+        const estimatedDuration = 22000;
+        setTimeout(() => {
+          setShouldBlockAccessibility(false);
+        }, estimatedDuration);
+      }, 500);
+    }
+  }, [currentCard, hasPlayedIntro]);
 
   // Navegación
   const handleNext = () => {
@@ -124,12 +179,24 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
     <LinearGradient colors={['#D5E6FF', '#E6F7FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea}>
         
+        {/* ⭐ OVERLAY DE LECTURA (solo si TalkBack está ON y estamos bloqueados) ⭐ */}
+        {isScreenReaderEnabled && shouldBlockAccessibility && (
+          <View
+            style={styles.readingOverlay}
+            accessible={true}
+            accessibilityLabel="Escucha la lección completa. La navegación estará disponible en un momento."
+            accessibilityViewIsModal={true}
+          >
+            {/* Overlay invisible que captura el foco mientras se lee */}
+          </View>
+        )}
+
         {/* Header */}
         <View
           style={styles.header}
           accessible={true}
-          // Simplificamos el label del header porque el useEffect ya está leyendo todo el detalle
           accessibilityLabel={`Encabezado de lección ${lessonTitle}`}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "yes"}
         >
           <View style={styles.headerTop}>
             <TouchableOpacity
@@ -157,11 +224,11 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
         >
           <View
             style={styles.whiteCard}
             accessible={true}
-            // Mantenemos esto para que si el usuario toca la tarjeta manualmente, la lea de nuevo
             accessibilityLabel={`Contenido principal: ${currentFlashcard.content}`}
           >
             <Text style={styles.introText}>{currentFlashcard.content}</Text>
@@ -194,7 +261,10 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
         </ScrollView>
 
         {/* Controles de navegación */}
-        <View style={styles.controls}>
+        <View 
+          style={styles.controls}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
+        >
           
           {currentCard > 0 && (
             <TouchableOpacity
@@ -217,7 +287,6 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
             style={styles.nextButtonContainer}
             accessible={true}
             accessibilityRole="button"
-            // Etiqueta dinámica: Si es la última tarjeta dice "Ir a ejercicios", si no "Siguiente"
             accessibilityLabel={isLastCard ? "Ir a los ejercicios" : "Siguiente tarjeta"}
             accessibilityHint={isLastCard ? "Toca dos veces para comenzar el cuestionario" : "Toca dos veces para ver más contenido"}
           >
@@ -230,10 +299,21 @@ const LeccionFlashcardScreen = ({ navigation, route }) => {
   );
 };
 
-// ... (El resto de tus estilos styles se mantienen igual)
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safeArea: { flex: 1 },
+  
+  // Overlay de lectura (invisible pero captura el foco)
+  readingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9998,
+    backgroundColor: 'transparent',
+  },
+  
   header: {
     backgroundColor: '#987ACC',
     paddingTop: 50,

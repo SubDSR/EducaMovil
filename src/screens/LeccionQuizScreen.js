@@ -1,4 +1,7 @@
-// src/screens/LeccionQuizScreen.js
+// src/screens/LeccionQuizScreen.js - VERSIÓN DEFINITIVA
+// CON TALKBACK: Lectura completa + timer después
+// SIN TALKBACK: Timer empieza inmediatamente (como antes)
+
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -29,59 +32,39 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   
-  // Estado de pausa
-  const [isPaused, setIsPaused] = useState(false); 
+  // ⚡ Estados por defecto: SIN pausa (para usuarios sin TalkBack)
+  const [isPaused, setIsPaused] = useState(false);
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
+  const [shouldBlockAccessibility, setShouldBlockAccessibility] = useState(false);
   
   // 🕐 Medición de tiempo real
   const startTime = useRef(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  // ✅ 1. DETECCIÓN Y SECUENCIA DE ACCESIBILIDAD
+  // ✅ 1. DETECCIÓN DE TALKBACK Y CONTROL INICIAL DEL TIMER
   useEffect(() => {
-    const setupAccessibility = async () => {
+    const checkScreenReader = async () => {
       const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
       setIsScreenReaderEnabled(isEnabled);
-
-      if (isEnabled) {
-        // A) SI HAY TALKBACK: Pausamos el timer INMEDIATAMENTE
-        setIsPaused(true);
-
-        // 1. Anuncio inicial
-        AccessibilityInfo.announceForAccessibility(
-          `Quiz de ${lessonTitle}. Escucha la pregunta y las opciones. El tiempo de 30 segundos comenzará después.`
-        );
-        
-        // 2. Leer pregunta (a los 3s)
-        setTimeout(() => {
-          AccessibilityInfo.announceForAccessibility(`Pregunta: ${quizData.question}`);
-        }, 3000);
-
-        // 3. Leer opciones (a los 7s)
-        setTimeout(() => {
-          const optionsText = quizData.options.map((opt, idx) => 
-            `Opción ${idx + 1}: ${opt.text}`
-          ).join('. ');
-          AccessibilityInfo.announceForAccessibility(optionsText);
-        }, 7000);
-
-        // 4. INICIAR EL TIEMPO (a los 13s - ajusta este tiempo según la longitud de tu texto)
-        setTimeout(() => {
-          // Anunciamos el inicio
-          AccessibilityInfo.announceForAccessibility("¡Ahora! Tienes 30 segundos.");
-          // Desbloqueamos el timer
-          setIsPaused(false); 
-          // Reseteamos la marca de tiempo para que el cálculo de "rapidez" sea justo
-          startTime.current = Date.now(); 
-        }, 13000);
-
-      } else {
-        // B) SI NO HAY TALKBACK: El timer corre normal
+      
+      if (!isEnabled) {
+        // ⚡ SIN TALKBACK: Timer empieza INMEDIATAMENTE (comportamiento original)
+        console.log('🔵 SIN TalkBack: Timer empieza inmediatamente');
         setIsPaused(false);
+        setShouldBlockAccessibility(false);
+        startTime.current = Date.now();
+      } else {
+        // ✅ CON TALKBACK: Timer empieza PAUSADO (esperando lectura)
+        console.log('🟢 CON TalkBack: Timer pausado, esperando lectura completa');
+        setIsPaused(true);
+        setShouldBlockAccessibility(true);
       }
     };
-
-    setupAccessibility();
+    checkScreenReader();
+    
+    const subscription = AccessibilityInfo.addEventListener('screenReaderChanged', setIsScreenReaderEnabled);
+    return () => subscription.remove();
   }, []);
 
   // ❌ OCULTAR TABS
@@ -124,7 +107,55 @@ const LeccionQuizScreen = ({ navigation, route }) => {
     incorrectExplanation: 'Un float se usa para guardar números con decimales. Aunque también puede almacenar enteros, está pensado para manejar valores decimales.',
   };
 
-  // Calcular tiempo transcurrido (para estadísticas)
+  // 🔊 2. LECTURA AUTOMÁTICA COMPLETA AL ENTRAR (SOLO CON TALKBACK)
+  useEffect(() => {
+    // ⚡ SOLO ejecuta esto si TalkBack está activo
+    if (isScreenReaderEnabled && !hasPlayedIntro) {
+      console.log('🔊 Iniciando lectura automática con TalkBack...');
+      
+      // Construimos el mensaje completo
+      let messageToRead = `Quiz de ${lessonTitle}. `;
+      messageToRead += `Pregunta: ${quizData.question}. `;
+      messageToRead += "Las opciones son: ";
+      
+      quizData.options.forEach((opt, index) => {
+        messageToRead += `Opción ${index + 1}: ${opt.text}. `;
+      });
+
+      messageToRead += "Selecciona una opción tocando dos veces sobre ella. ";
+      messageToRead += "El cronómetro de 30 segundos comenzará después de este mensaje.";
+
+      // 📊 CÁLCULO PRECISO DE DURACIÓN
+      const wordCount = messageToRead.split(' ').length;
+      const estimatedSeconds = Math.ceil(wordCount / 2.5);
+      const estimatedDuration = (estimatedSeconds + 3) * 1000;
+      
+      console.log(`📊 Mensaje tiene ${wordCount} palabras`);
+      console.log(`⏱️ Duración estimada: ${estimatedSeconds} segundos`);
+      console.log(`🔒 Esperaremos: ${estimatedDuration / 1000} segundos`);
+
+      // Reproducimos el mensaje completo
+      setTimeout(() => {
+        AccessibilityInfo.announceForAccessibility(messageToRead);
+        setHasPlayedIntro(true);
+
+        // Después del mensaje, desbloqueamos y ACTIVAMOS el timer
+        setTimeout(() => {
+          console.log('✅ Lectura completa. Activando cronómetro...');
+          setShouldBlockAccessibility(false);
+          
+          // 🎬 AQUÍ EMPIEZA EL CRONÓMETRO (solo con TalkBack)
+          AccessibilityInfo.announceForAccessibility("El cronómetro ha comenzado. Tienes 30 segundos.");
+          setIsPaused(false);
+          
+          // Reseteamos el tiempo inicial para medición correcta
+          startTime.current = Date.now();
+        }, estimatedDuration);
+      }, 1500);
+    }
+  }, [isScreenReaderEnabled, hasPlayedIntro]);
+
+  // Calcular tiempo transcurrido
   useEffect(() => {
     const interval = setInterval(() => {
       if (!showFeedback && !isPaused) {
@@ -139,9 +170,12 @@ const LeccionQuizScreen = ({ navigation, route }) => {
     if (!showFeedback) {
       const selectedOption = quizData.options.find(opt => opt.id === optionId);
       setSelectedAnswer(optionId);
-      AccessibilityInfo.announceForAccessibility(
-        `Seleccionaste: ${selectedOption?.text}. Presiona verificar para comprobar tu respuesta.`
-      );
+      
+      if (isScreenReaderEnabled) {
+        AccessibilityInfo.announceForAccessibility(
+          `Seleccionaste: ${selectedOption?.text}. Presiona verificar para comprobar tu respuesta.`
+        );
+      }
     }
   };
 
@@ -155,13 +189,15 @@ const LeccionQuizScreen = ({ navigation, route }) => {
       const selectedOption = quizData.options.find(opt => opt.id === selectedAnswer);
       const isCorrect = selectedOption?.isCorrect;
       
-      setTimeout(() => {
-        if (isCorrect) {
-          AccessibilityInfo.announceForAccessibility(`¡Correcto! ${quizData.correctExplanation}`);
-        } else {
-          AccessibilityInfo.announceForAccessibility(`Incorrecto. ${quizData.incorrectExplanation}`);
-        }
-      }, 500);
+      if (isScreenReaderEnabled) {
+        setTimeout(() => {
+          if (isCorrect) {
+            AccessibilityInfo.announceForAccessibility(`¡Correcto! ${quizData.correctExplanation}`);
+          } else {
+            AccessibilityInfo.announceForAccessibility(`Incorrecto. ${quizData.incorrectExplanation}`);
+          }
+        }, 500);
+      }
     }
   };
 
@@ -182,7 +218,6 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   const handleTimeUp = () => {
     if (!showFeedback) {
       setElapsedTime(30);
-      // El anuncio de "Tiempo terminado" ya lo hace el TimerProgressBar
       handleNext();
     }
   };
@@ -223,8 +258,25 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   return (
     <LinearGradient colors={['#D5E6FF', '#E6F7FF']} style={styles.gradient}>
       <SafeAreaView style={styles.safeArea} accessible={false}>
+        
+        {/* ⭐ OVERLAY DE LECTURA (solo si TalkBack está ON y estamos bloqueados) ⭐ */}
+        {isScreenReaderEnabled && shouldBlockAccessibility && (
+          <View
+            style={styles.readingOverlay}
+            accessible={true}
+            accessibilityLabel="Escucha la pregunta y las opciones completas. El cronómetro comenzará después."
+            accessibilityViewIsModal={true}
+          >
+          </View>
+        )}
+
         {/* Header con temporizador */}
-        <View style={styles.header} accessible={true} accessibilityLabel={`Quiz de ${lessonTitle}`}>
+        <View 
+          style={styles.header} 
+          accessible={true} 
+          accessibilityLabel={`Quiz de ${lessonTitle}`}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "yes"}
+        >
           <View style={styles.headerTop}>
             <TouchableOpacity 
               onPress={handleClose} 
@@ -241,10 +293,7 @@ const LeccionQuizScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* ⏱️ TEMPORIZADOR
-              Nota: Dentro de TimerProgressBar ya ocultamos el texto para accesibilidad 
-              si TalkBack está activo, así que ya no leerá cada segundo.
-          */}
+          {/* ⏱️ TEMPORIZADOR */}
           <View>
             <TimerProgressBar 
               duration={30} 
@@ -255,7 +304,11 @@ const LeccionQuizScreen = ({ navigation, route }) => {
         </View>
 
         {/* Contenido */}
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          showsVerticalScrollIndicator={false}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
+        >
           <View style={styles.questionRow}>
             <Image source={robotQuestion} style={styles.robotQuestionImage} accessible={true} accessibilityLabel="Robot instructor" />
             <View style={styles.speechBubble} accessible={true} accessibilityRole="text" accessibilityLabel={`Pregunta: ${quizData.question}`}>
@@ -301,7 +354,10 @@ const LeccionQuizScreen = ({ navigation, route }) => {
           )}
         </ScrollView>
 
-        <View style={styles.actionContainer}>
+        <View 
+          style={styles.actionContainer}
+          importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
+        >
           {!showFeedback ? (
             <TouchableOpacity
               style={[styles.verifyButton, !selectedAnswer && styles.verifyButtonDisabled]}
@@ -331,221 +387,55 @@ const LeccionQuizScreen = ({ navigation, route }) => {
   );
 };
 
-// ... Styles igual que antes
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safeArea: { flex: 1 },
-  header: 
-  { 
-    backgroundColor: '#987ACC', 
-    paddingTop: 50, 
-    paddingBottom: 15, 
-    paddingHorizontal: 20 
+  
+  // Overlay de lectura
+  readingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9998,
+    backgroundColor: 'transparent',
   },
-
-  headerTop: 
-  { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 15 
-  },
-
-  closeButton: 
-  { 
-    padding: 5, 
-    marginRight: 15 
-  },
-
-  titleContainer: 
-  { 
-    flex: 1 
-  },
-  headerTitle: 
-  { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-    color: 'white' 
-  },
-  headerSubtitle: 
-  { 
-    fontSize: 14, 
-    color: 'rgba(255, 255, 255, 0.8)', 
-    marginTop: 2 
-  },
-  content: 
-  { 
-    paddingHorizontal: 20, 
-    paddingTop: 20, 
-    paddingBottom: 20 
-  },
-  questionRow: 
-  { 
-    flexDirection: 'row', 
-    alignItems: 'flex-start', 
-    marginBottom: 30 
-  },
-  robotQuestionImage: 
-  { 
-    width: 130, 
-    height: 130, 
-    resizeMode: 'contain',  
-  },
-  speechBubble: 
-  { 
-    flex: 1, 
-    backgroundColor: '#FFC8F4', 
-    borderRadius: 20, 
-    borderWidth: 1,
-    borderColor: '#5a5a5aff',
-    padding: 20, 
-    elevation: 3 
-  },
-  questionText: 
-  { 
-    fontSize: 16, 
-    color: '#333', 
-    fontWeight: '600', 
-    lineHeight: 24 
-  },
-  answersSection: 
-  { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 20 
-  },
-  optionsContainer: 
-  { 
-    flex: 1, 
-    gap: 12 
-  },
-  optionButton: 
-  { 
-    backgroundColor: '#B0D4FF', 
-    borderRadius: 16, 
-    paddingVertical: 16, 
-    paddingHorizontal: 20, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    minHeight: 55, 
-    borderWidth: 2,
-    borderColor: '#5a5a5aff',
-    width: '100%' 
-  },
-  optionButtonSelected: 
-  { 
-    backgroundColor: '#2B5A9E', 
-    borderWidth: 2,
-    borderColor: '#1E3E6B' 
-  },
-  optionButtonDisabled: 
-  { 
-    opacity: 0.5 
-  },
-  correctAnswer: 
-  { 
-    backgroundColor: '#4CAF50', 
-    borderColor: '#45A049' 
-  },
-  incorrectAnswer: 
-  { 
-    backgroundColor: '#FF6B6B', 
-    borderColor: '#E55A5A' 
-  },
-  robotAnswerImage: 
-  { 
-    width: 150, 
-    height: 150, 
-    resizeMode: 'contain', 
-  },
-  robotFeedbackImage: 
-  { 
-    width: 150, 
-    height: 150, 
-    resizeMode: 'contain', 
-  },
-  feedbackBubble: 
-  { 
-    borderRadius: 20, 
-    padding: 20, 
-    elevation: 3, 
-    marginTop: 10 
-  },
-  feedbackBubbleCorrect: 
-  { 
-    backgroundColor: '#E8F5E9' ,
-    borderWidth: 1,
-    borderColor: '#5a5a5aff',
-  },
-  feedbackBubbleIncorrect: 
-  { 
-    backgroundColor: '#FFEBEE' ,
-    borderWidth: 1,
-    borderColor: '#5a5a5aff',
-  },
-  feedbackHeader: 
-  { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 12 
-  },
-  feedbackTitle: 
-  { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    marginLeft: 8 
-  },
-  feedbackTitleCorrect: 
-  { 
-    color: '#4CAF50' 
-  },
-  feedbackTitleIncorrect: 
-  { 
-    color: '#FF6B6B' 
-  },
-  feedbackExplanation: 
-  { 
-    fontSize: 14, 
-    color: '#333', 
-    lineHeight: 22 
-  },
-  actionContainer: 
-  { 
-    paddingHorizontal: 20, 
-    paddingVertical: 20, 
-    borderTopWidth: 1, 
-    borderTopColor: 'rgba(0, 0, 0, 0.1)', 
-    alignItems: 'center' 
-  },
-  verifyButton: 
-  { 
-    backgroundColor: '#7C3FE0', 
-    borderRadius: 16, 
-    paddingVertical: 16, 
-    width: '100%', 
-    alignItems: 'center' 
-  },
-  verifyButtonDisabled: 
-  { 
-    backgroundColor: '#CCCCCC' 
-  },
-  verifyButtonText: 
-  { 
-    color: 'white', 
-    fontSize: 18, 
-    fontWeight: 'bold' 
-  },
-  nextButtonContainer: 
-  { 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    width: '100%' 
-  },
-  nextButtonImage: 
-  { 
-    width: 70, 
-    height: 70, 
-    resizeMode: 'contain' 
-  },
+  
+  header: { backgroundColor: '#987ACC', paddingTop: 50, paddingBottom: 15, paddingHorizontal: 20 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  closeButton: { padding: 5, marginRight: 15 },
+  titleContainer: { flex: 1 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: 'white' },
+  headerSubtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 },
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
+  questionRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 30 },
+  robotQuestionImage: { width: 130, height: 130, resizeMode: 'contain' },
+  speechBubble: { flex: 1, backgroundColor: '#FFC8F4', borderRadius: 20, borderWidth: 1, borderColor: '#5a5a5aff', padding: 20, elevation: 3 },
+  questionText: { fontSize: 16, color: '#333', fontWeight: '600', lineHeight: 24 },
+  answersSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  optionsContainer: { flex: 1, gap: 12 },
+  optionButton: { backgroundColor: '#B0D4FF', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', minHeight: 55, borderWidth: 2, borderColor: '#5a5a5aff', width: '100%' },
+  optionButtonSelected: { backgroundColor: '#2B5A9E', borderWidth: 2, borderColor: '#1E3E6B' },
+  optionButtonDisabled: { opacity: 0.5 },
+  correctAnswer: { backgroundColor: '#4CAF50', borderColor: '#45A049' },
+  incorrectAnswer: { backgroundColor: '#FF6B6B', borderColor: '#E55A5A' },
+  robotAnswerImage: { width: 150, height: 150, resizeMode: 'contain' },
+  robotFeedbackImage: { width: 150, height: 150, resizeMode: 'contain' },
+  feedbackBubble: { borderRadius: 20, padding: 20, elevation: 3, marginTop: 10 },
+  feedbackBubbleCorrect: { backgroundColor: '#E8F5E9', borderWidth: 1, borderColor: '#5a5a5aff' },
+  feedbackBubbleIncorrect: { backgroundColor: '#FFEBEE', borderWidth: 1, borderColor: '#5a5a5aff' },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  feedbackTitle: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+  feedbackTitleCorrect: { color: '#4CAF50' },
+  feedbackTitleIncorrect: { color: '#FF6B6B' },
+  feedbackExplanation: { fontSize: 14, color: '#333', lineHeight: 22 },
+  actionContainer: { paddingHorizontal: 20, paddingVertical: 20, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 0.1)', alignItems: 'center' },
+  verifyButton: { backgroundColor: '#7C3FE0', borderRadius: 16, paddingVertical: 16, width: '100%', alignItems: 'center' },
+  verifyButtonDisabled: { backgroundColor: '#CCCCCC' },
+  verifyButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  nextButtonContainer: { justifyContent: 'center', alignItems: 'center', width: '100%' },
+  nextButtonImage: { width: 70, height: 70, resizeMode: 'contain' },
 });
 
 export default LeccionQuizScreen;

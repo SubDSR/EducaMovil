@@ -1,4 +1,4 @@
-// src/screens/TiposDeDatosScreen.js - VERSIÓN FINAL INTEGRADA
+// src/screens/TiposDeDatosScreen.js - MENSAJE DE BIENVENIDA PRIMERO
 import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -10,7 +10,7 @@ import {
   ScrollView,
   BackHandler,
   Platform,
-  AccessibilityInfo, // Esencial para detectar TalkBack y hacer anuncios
+  AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -28,6 +28,8 @@ const robot8 = require('../../assets/img/robot-8.png');
 const TiposDeDatosScreen = ({ navigation }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
+  const [shouldBlockAccessibility, setShouldBlockAccessibility] = useState(true);
 
   // 1. --- DETECCIÓN DE TALKBACK ---
   useEffect(() => {
@@ -40,23 +42,31 @@ const TiposDeDatosScreen = ({ navigation }) => {
     return () => subscription.remove();
   }, []);
 
-  // 2. --- INTRODUCCIÓN DE AUDIO (Del código 2) ---
+  // 2. --- INTRODUCCIÓN DE AUDIO CON PRIORIDAD ---
   useEffect(() => {
-    // Solo anunciamos si no hay un nivel seleccionado al inicio
-    if (!selectedLevel) {
+    // Solo si TalkBack está activo Y no hemos reproducido el intro
+    if (isScreenReaderEnabled && !hasPlayedIntro) {
+      // Bloqueamos temporalmente la accesibilidad de los elementos
+      setShouldBlockAccessibility(true);
+      
       const introMessage = 
-        "Bienvenido a la ruta de aprendizaje de Tipos de Datos. " +
         "Esta pantalla es un mapa vertical. " +
-        "Encontrarás niveles desbloqueados, tu nivel actual marcado con una imagen, " +
+        "Encontrarás niveles desbloqueados, tu nivel actual marcado con un botón, " +
         "y lecciones futuras bloqueadas. " +
         "Selecciona un nivel y luego toca dos veces en cualquier parte para comenzar.";
 
-      // Pequeño retraso para asegurar que la pantalla cargó y TalkBack está listo
+      // Esperar 1.5 segundos para que TalkBack esté listo
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility(introMessage);
-      }, 1000);
+        setHasPlayedIntro(true);
+        
+        // Después de 10 segundos (tiempo estimado del mensaje), desbloqueamos los elementos
+        setTimeout(() => {
+          setShouldBlockAccessibility(false);
+        }, 10000);
+      }, 1500);
     }
-  }, []); // Se ejecuta solo al montar
+  }, [isScreenReaderEnabled, hasPlayedIntro]);
 
   // 3. --- GESTIÓN DE TABS ---
   const showTabs = () => {
@@ -87,15 +97,13 @@ const TiposDeDatosScreen = ({ navigation }) => {
     return () => showTabs();
   }, [navigation]);
 
-  // 4. --- BACK HANDLER INTELIGENTE (Del código 1) ---
+  // 4. --- BACK HANDLER INTELIGENTE ---
   useEffect(() => {
     const backAction = () => {
-      // Si hay un nivel seleccionado, el botón atrás solo cierra la selección (burbuja)
       if (selectedLevel) {
         setSelectedLevel(null);
         return true;
       }
-      // Si no hay selección, volvemos al menú principal
       showTabs();
       setTimeout(() => navigation.navigate('Cursos'), 50);
       return true;
@@ -124,7 +132,6 @@ const TiposDeDatosScreen = ({ navigation }) => {
       const isSelecting = selectedLevel?.id !== lesson.id;
       setSelectedLevel(isSelecting ? lesson : null);
 
-      // Si TalkBack está activo y abrimos un nivel, damos la instrucción de confirmación global
       if (isScreenReaderEnabled && isSelecting) {
         AccessibilityInfo.announceForAccessibility(
           `Has seleccionado ${lesson.title}. Toca dos veces en cualquier parte de la pantalla para comenzar.`
@@ -134,7 +141,6 @@ const TiposDeDatosScreen = ({ navigation }) => {
   };
 
   const startLesson = (lesson) => {
-    // Si no pasamos lección (ej. desde el overlay ciego), usamos la seleccionada actualmente
     const targetLesson = lesson || selectedLevel;
     if (targetLesson) {
       setSelectedLevel(null);
@@ -150,7 +156,6 @@ const TiposDeDatosScreen = ({ navigation }) => {
     setTimeout(() => navigation.navigate('Cursos'), 50);
   };
 
-  // Calculadora de posición visual
   const getBubblePosition = (levelPosition) => {
     const BUBBLE_WIDTH = 280;
     const SCREEN_WIDTH = 360;
@@ -186,6 +191,8 @@ const TiposDeDatosScreen = ({ navigation }) => {
         style={styles.header} 
         accessible={true} 
         accessibilityLabel="Mapa de lecciones de Tipos de Datos"
+        // Bloqueamos temporalmente si el intro no ha terminado
+        importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "yes"}
       >
         <TouchableOpacity 
           onPress={handleGoBack}
@@ -199,7 +206,23 @@ const TiposDeDatosScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
+      {/* ⭐ OVERLAY DE BIENVENIDA (solo si TalkBack está ON y el intro no ha terminado) ⭐ */}
+      {isScreenReaderEnabled && shouldBlockAccessibility && (
+        <View
+          style={styles.welcomeOverlay}
+          accessible={true}
+          accessibilityLabel="Bienvenido a la ruta de aprendizaje de Tipos de Datos. "
+          accessibilityViewIsModal={true}
+        >
+          {/* Overlay invisible que captura el foco mientras se reproduce el intro */}
+        </View>
+      )}
+
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        // Bloqueamos scroll mientras se reproduce el intro
+        importantForAccessibility={shouldBlockAccessibility && isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
+      >
         {/* Robots Decorativos (Silenciados para accesibilidad) */}
         <Image source={robot3} style={[styles.robot, { left: 30, top: 170 }]} accessible={false} />
         <Image source={robot4} style={[styles.robot, { left: 30, top: 1370 }]} accessible={false} />
@@ -219,8 +242,6 @@ const TiposDeDatosScreen = ({ navigation }) => {
               style={{ left: bubblePos.left, top: bubblePos.top }}
               arrowPosition={bubblePos.arrowPosition}
               arrowOffset={bubblePos.arrowOffset}
-              // TRUCO: Si TalkBack está ON, ocultamos esta burbuja del lector.
-              // El lector interactuará con el Overlay Gigante en su lugar.
               isAccessibilityHidden={isScreenReaderEnabled}
             />
           );
@@ -256,24 +277,17 @@ const TiposDeDatosScreen = ({ navigation }) => {
         ))}
       </ScrollView>
 
-      {/* ⭐⭐ CAPA MÁGICA DE ACCESIBILIDAD ⭐⭐
-        Se activa SOLO si:
-        1. TalkBack está encendido
-        2. Hay un nivel seleccionado
-        Cubre toda la pantalla para capturar el "doble toque en cualquier lugar".
-      */}
-      {isScreenReaderEnabled && selectedLevel && (
+      {/* ⭐ CAPA MÁGICA DE ACCESIBILIDAD ⭐ */}
+      {isScreenReaderEnabled && selectedLevel && !shouldBlockAccessibility && (
         <TouchableOpacity
           style={styles.accessibilityOverlay}
           onPress={() => startLesson()}
-          activeOpacity={1} // Sin efecto visual al presionar
+          activeOpacity={1}
           accessible={true}
           accessibilityRole="button"
-          // Instrucción clara para el lector
           accessibilityLabel={`Confirmar comenzar ${selectedLevel.title}. Toca dos veces aquí o en cualquier parte para iniciar.`}
-          accessibilityViewIsModal={true} // Atrapa el foco de TalkBack aquí
+          accessibilityViewIsModal={true}
         >
-          {/* Es transparente, no se ve, pero se siente */}
         </TouchableOpacity>
       )}
 
@@ -289,15 +303,26 @@ const styles = StyleSheet.create({
   container: { height: 2080, position: 'relative' },
   robot: { position: 'absolute', width: 150, height: 150, resizeMode: 'contain' },
   
-  // Estilo crucial para la capa invisible
+  // Overlay de bienvenida (invisible pero captura el foco)
+  welcomeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9998,
+    backgroundColor: 'transparent',
+  },
+  
+  // Overlay de confirmación (cuando se selecciona un nivel)
   accessibilityOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 9999, // Asegura estar encima de todo
-    backgroundColor: 'transparent', // Invisible
+    zIndex: 9999,
+    backgroundColor: 'transparent',
   }
 });
 

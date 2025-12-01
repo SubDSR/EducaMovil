@@ -1,4 +1,4 @@
-// src/components/TimerProgressBar.js
+// src/components/TimerProgressBar.js - CON ANUNCIOS MEJORADOS
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, AccessibilityInfo } from 'react-native';
 
@@ -11,6 +11,13 @@ const TimerProgressBar = ({
   const [progress, setProgress] = useState(1);
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
   const hasCompleted = useRef(false);
+  const hasAnnounced20 = useRef(false);
+  const hasAnnounced10 = useRef(false);
+  const hasAnnounced5 = useRef(false);
+  const hasAnnounced4 = useRef(false);
+  const hasAnnounced3 = useRef(false);
+  const hasAnnounced2 = useRef(false);
+  const hasAnnounced1 = useRef(false);
 
   // 1. Detectar si TalkBack está activo
   useEffect(() => {
@@ -20,6 +27,13 @@ const TimerProgressBar = ({
   // 2. Reset cuando cambia duración
   useEffect(() => {
     hasCompleted.current = false;
+    hasAnnounced20.current = false;
+    hasAnnounced10.current = false;
+    hasAnnounced5.current = false;
+    hasAnnounced4.current = false;
+    hasAnnounced3.current = false;
+    hasAnnounced2.current = false;
+    hasAnnounced1.current = false;
     setTimeLeft(duration);
     setProgress(1);
   }, [duration]);
@@ -30,45 +44,68 @@ const TimerProgressBar = ({
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
-        // --- LÓGICA DE AVISOS DE VOZ ---
-        if (isScreenReaderEnabled && prev > 0) {
-           const nextVal = prev - 0.1;
-           
-           // Usamos Math.floor para detectar el cambio de segundo entero
-           // Ejemplo: Si pasamos de 20.05 (floor 20) a 19.95 (floor 19) -> Cruzamos la frontera
-           const currentSec = Math.floor(prev); // ej: 20
-           const nextSec = Math.floor(nextVal); // ej: 19
-
-           if (currentSec !== nextSec) {
-             // Acabamos de entrar en un nuevo segundo (nextSec)
-             
-             if (nextSec === 20) {
-               AccessibilityInfo.announceForAccessibility("Quedan 20 segundos");
-             } else if (nextSec === 10) {
-               AccessibilityInfo.announceForAccessibility("Quedan 10 segundos");
-             } else if (nextSec <= 5 && nextSec > 0) {
-               // Cuenta regresiva 5, 4, 3, 2, 1
-               AccessibilityInfo.announceForAccessibility(`${nextSec}`);
-             } else if (nextSec === 0) {
-               AccessibilityInfo.announceForAccessibility("Tiempo terminado");
-             }
-           }
-        }
-        // -------------------------------------------
-
         if (prev <= 0) {
           clearInterval(interval);
           if (!hasCompleted.current) {
             hasCompleted.current = true;
-            // Delay mínimo para asegurar que se escuche "Tiempo terminado" antes de cambiar pantalla
+            
+            // Anunciar "Tiempo terminado"
+            if (isScreenReaderEnabled) {
+              AccessibilityInfo.announceForAccessibility("El tiempo se ha acabado");
+            }
+            
+            // Delay para que se escuche el mensaje antes de cambiar pantalla
             setTimeout(() => {
               onComplete();
-            }, 1000); 
+            }, 2000);
           }
           return 0;
         }
         
         const newTime = prev - 0.1;
+        
+        // --- ANUNCIOS DE VOZ ---
+        if (isScreenReaderEnabled) {
+          const currentSec = Math.floor(prev);
+          const nextSec = Math.floor(newTime);
+
+          // Detectar cuando cruzamos la frontera de un segundo
+          if (currentSec !== nextSec) {
+            // Anuncio a los 20 segundos
+            if (nextSec === 20 && !hasAnnounced20.current) {
+              hasAnnounced20.current = true;
+              AccessibilityInfo.announceForAccessibility("Faltan 20 segundos");
+            }
+            // Anuncio a los 10 segundos
+            else if (nextSec === 10 && !hasAnnounced10.current) {
+              hasAnnounced10.current = true;
+              AccessibilityInfo.announceForAccessibility("Faltan 10 segundos");
+            }
+            // Cuenta regresiva del 5 al 1
+            else if (nextSec === 5 && !hasAnnounced5.current) {
+              hasAnnounced5.current = true;
+              AccessibilityInfo.announceForAccessibility("5");
+            }
+            else if (nextSec === 4 && !hasAnnounced4.current) {
+              hasAnnounced4.current = true;
+              AccessibilityInfo.announceForAccessibility("4");
+            }
+            else if (nextSec === 3 && !hasAnnounced3.current) {
+              hasAnnounced3.current = true;
+              AccessibilityInfo.announceForAccessibility("3");
+            }
+            else if (nextSec === 2 && !hasAnnounced2.current) {
+              hasAnnounced2.current = true;
+              AccessibilityInfo.announceForAccessibility("2");
+            }
+            else if (nextSec === 1 && !hasAnnounced1.current) {
+              hasAnnounced1.current = true;
+              AccessibilityInfo.announceForAccessibility("1");
+            }
+          }
+        }
+        // -------------------------------------------
+
         setProgress(newTime / duration);
         return newTime;
       });
@@ -87,10 +124,7 @@ const TimerProgressBar = ({
   return (
     <View 
       style={styles.container}
-      // TRUCO IMPORTANTE: 
-      // Si TalkBack está activado, ocultamos este contenedor de la accesibilidad.
-      // Así evitamos que TalkBack lea "29, 28, 27..." cada vez que cambia el número visualmente.
-      // Nosotros controlamos los anuncios manualmente con announceForAccessibility.
+      // Ocultamos del lector de pantalla para evitar que lea los números cambiantes
       importantForAccessibility={isScreenReaderEnabled ? "no-hide-descendants" : "auto"}
     >
       <View style={styles.progressBarContainer}>
@@ -105,7 +139,7 @@ const TimerProgressBar = ({
         />
       </View>
       
-      {/* El texto visual sigue ahí para quien ve, pero TalkBack lo ignora si está activado */}
+      {/* El texto visual sigue ahí para quien ve */}
       <Text style={styles.timeText}>{formatTime(timeLeft)}</Text>
     </View>
   );
